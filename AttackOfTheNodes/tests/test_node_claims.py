@@ -408,7 +408,7 @@ ENGINE_VALUES = {
  'start_node':'COMPUTED', 'end_node':None, 'branch_node':'UPSTREAM',
  'branch_end_node':'UPSTREAM', 'conditional_node':'UPSTREAM', 'concat_node':'COMPUTED VAULT',
  'text_output_node':'COMPUTED UPSTREAM', 'user_text_input_node':'ANSWER',
- 'text_transform_node':'upstream', 'json_path_node':'COMPUTED', 'merge_node':'UPSTREAM',
+ 'text_transform_node':'upstream', 'json_path_node':'COMPUTED', 'merge_node':'UPSTREAM', 'wait_until_node':'UPSTREAM',
  'file_reader_node':'COMPUTED\nsecond line\n', 'file_output_node':'$saved_ref',
 }
 ENGINE_CASES = [('conditional_node','false')] + [(k,'normal') for k in sorted(ADMITTED)] + [
@@ -428,6 +428,7 @@ async def test_palette_real_engine_delivery(kind,mode,engine,tmp_path,monkeypatc
     if kind=='check_reply_node': config.update(input_source='Configured', input=CASES[kind]['inputs']['input'])
     source=wm.add_node('start_node')
     target=source if kind=='start_node' else wm.add_node(kind)
+    if kind=='wait_until_node': config['target_node_ids']=[source]
     if kind!='start_node':
         incoming='content' if kind=='file_output_node' else 'path_a' if kind=='merge_node' else 'input'
         producer=source

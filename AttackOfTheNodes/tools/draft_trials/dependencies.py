@@ -11,8 +11,8 @@ import subprocess
 from .cases import case_record, good_draft
 
 ALL = (1, 2, 3, 4)
-# Normal-run cases per suite. Set 4's other requests are Stage 2: opt-in offline.
-CASE_COUNTS = {1: 10, 2: 10, 3: 4, 4: 2}
+# Normal-run cases per suite.
+CASE_COUNTS = {1: 10, 2: 10, 3: 4, 4: 5}
 APP = Path(__file__).resolve().parents[2]
 # These files own only the corresponding versioned suite/oracle. Shared cases.py
 # supplies common graph helpers and dispatch, so it is deliberately not narrow.

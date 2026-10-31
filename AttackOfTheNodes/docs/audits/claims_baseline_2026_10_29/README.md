@@ -299,3 +299,8 @@ and its source-contract runtime hash are refreshed. The node's only change passe
 its existing flow report to the draft check; no record text, source option or
 standard flag moved. Merge joins the admitted engine scenarios (normal plus
 supported Vault modes). [Stage 1 audit](../family_two_stage1_2026_10_31/README.md).
+
+2026-10-31 Family 2 Stage 2 recheck: `palette_selection.py` and the trial admission
+sources changed, so `check_reply_node`'s source hash and this receipt are refreshed. No
+node source, record text, source option or standard flag moved. Wait Until joins the
+admitted engine scenarios. [Stage 2 audit](../family_two_stage2_2026_10_31/README.md).

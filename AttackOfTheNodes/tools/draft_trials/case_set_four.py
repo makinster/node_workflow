@@ -1,9 +1,12 @@
-"""Family 2 data. F2-01/02 and pairs 1/6 are in the normal run; Stage 2 stays opt-in."""
+"""Family 2 data. Every request and pair up to the current draft stage is in the normal run."""
 from copy import deepcopy
 from pathlib import Path
 
+from backend.palette_selection import ADMISSION_VERSIONS
+
 VERSION = 1
 COUNT = 5
+DRAFT_STAGE = ADMISSION_VERSIONS['draft_stage']
 STAGES = {1: 1, 2: 1, 3: 2, 4: 2, 5: 2}
 REQUESTS = [
     'Read ROOT/report-a.txt and ROOT/report-b.txt in parallel. Show both contents once, labelled A then B, after both reads finish.',
@@ -18,17 +21,17 @@ REFERENCE_NOTE = ('Run a slow step on A, such as a five-minute MCP call. On B ga
                   'belong to engine/editor tests; no MCP/provider task or Beacon draft is admitted.')
 
 
-def case_record(number, root, *, stage=1):
+def case_record(number, root, *, stage=DRAFT_STAGE):
     if number not in STAGES or stage not in (1, 2):
         raise ValueError('set 4 has cases 1..5 and evaluation stages 1/2')
     root = str(Path(root).resolve())
     return dict(version=VERSION, case_set=4, id=number, key=f'F2-{number:02d}',
                 root=root, request=REQUESTS[number-1].replace('ROOT', root), clarification='',
                 expected_status='ready', required_stage=STAGES[number], evaluation_stage=stage,
-                admitted=STAGES[number] == 1, reference_note=REFERENCE_NOTE if number == 3 else '')
+                admitted=STAGES[number] <= DRAFT_STAGE, reference_note=REFERENCE_NOTE if number == 3 else '')
 
 
-def case_ids(stage=1):
+def case_ids(stage=DRAFT_STAGE):
     return [n for n in STAGES if STAGES[n] <= stage]
 
 
@@ -149,14 +152,14 @@ def good_draft(number, root='ROOT', *, same_slot=False):
     return dict(format='aotn-workflow/1',name=f'Family 2 case {number}',nodes=nodes,connections=edges)
 
 
-def calibration_pairs(*, stage=1):
+def calibration_pairs(*, stage=DRAFT_STAGE):
     pairs=[]
     def pair(number,name,case,mutate,**kwargs):
         good=good_draft(case,**kwargs)
         bad=deepcopy(good)
         mutate(bad)
         pairs.append(dict(id=name,number=number,case=case,case_set=4,required_stage=STAGES[case],
-                          admitted=STAGES[case]==1,good=good,bad=bad))
+                          admitted=STAGES[case]<=DRAFT_STAGE,good=good,bad=bad))
     def pick(s):
         s['nodes']['pick']=dict(type='json_path_node',config={'path':'path_a'})
         for e in s['connections']:

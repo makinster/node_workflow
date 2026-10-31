@@ -1180,6 +1180,158 @@
       }
     },
     {
+      "fixture": "handoff_vs_lost_child",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "handoff_vs_lost_child",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "either_or_vs_escape",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "either_or_vs_escape",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "gate_vs_impossible_wait",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "gate_vs_impossible_wait",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "same_slot_list_vs_overwrite",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "same_slot_list_vs_overwrite",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
       "fixture": "join_vs_shared_end",
       "variant": "good",
       "result": "pass",

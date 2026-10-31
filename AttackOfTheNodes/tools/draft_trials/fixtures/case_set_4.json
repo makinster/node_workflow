@@ -2,9 +2,12 @@
   "schema_version": 1,
   "admitted": [
     1,
-    2
+    2,
+    3,
+    4,
+    5
   ],
-  "default_evaluation_stage": 1,
+  "default_evaluation_stage": 2,
   "cases": [
     {
       "id": 1,

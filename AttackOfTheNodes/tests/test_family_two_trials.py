@@ -22,20 +22,20 @@ def relocated(spec,root):
     return json.loads(json.dumps(spec).replace('ROOT',str(root)))
 
 
-def test_frozen_thirty_pairs_are_unchanged_and_only_stage_one_is_admitted():
+def test_frozen_thirty_pairs_are_unchanged_and_beacon_stays_out():
     from tools.draft_trials.cases import calibration_pairs as original
     frozen=(FIXTURES/'calibration.json').read_bytes()
     assert hashlib.sha256(frozen).hexdigest()=='684dc67afa52c557e501501a450c8706c55dc03fa943cb110af039fdff47cbf5'
     assert len(json.loads(frozen))==len(original())==30
-    assert 'merge_node' in ADMITTED and not {'wait_until_node','branch_end_node'} & ADMITTED
-    assert 'wait' not in ROLE_TYPES
+    assert {'merge_node','wait_until_node'} <= ADMITTED and 'branch_end_node' not in ADMITTED
+    assert ROLE_TYPES['wait_for_step']==[('wait_until_node',)]
     assert sets_from_text('all')==[1,2,3,4]
 
 
 def test_data_snapshots_and_stage_partitions_are_explicit():
     data=json.loads((FIXTURES/'case_set_4.json').read_text())
     pairs=json.loads((FIXTURES/'calibration_set_4.json').read_text())
-    assert data['admitted']==[1,2] and data['default_evaluation_stage']==1
+    assert data['admitted']==[1,2,3,4,5] and data['default_evaluation_stage']==2
     assert [c['key'] for c in data['cases']]==[f'F2-{i:02d}' for i in range(1,6)]
     for row in data['cases']:
         n=row['id']
@@ -45,10 +45,10 @@ def test_data_snapshots_and_stage_partitions_are_explicit():
         assert row['variants']==json.loads(json.dumps(fixture_variants(n)))
         assert all(v['answers']==[] and v['writes']=={} for v in row['variants'])
     assert pairs==calibration_pairs(stage=2)
-    assert case_ids()==[1,2] and case_ids(2)==[1,2,3,4,5]
-    assert {p['number'] for p in calibration_pairs()}=={1,6}
+    assert case_ids(1)==[1,2] and case_ids()==[1,2,3,4,5]
+    assert {p['number'] for p in calibration_pairs(stage=1)}=={1,6}
     assert {p['number'] for p in pairs if p['required_stage']==2}=={2,3,4,5}
-    assert all(p['admitted']==(p['required_stage']==1) for p in pairs)
+    assert all(p['admitted'] for p in pairs)
     assert good_draft(4)['nodes']['ready']['config']['label']==''
 
 
@@ -65,7 +65,7 @@ def test_good_cases_and_bad_pairs_have_expected_mechanical_verdict(n,tmp_path):
 
 @pytest.mark.parametrize('n',[3,4,5])
 def test_stage_two_is_outside_stage_one_not_an_engine_limitation(n,tmp_path):
-    result=check_rules(good_draft(n,str(tmp_path)),case_record(n,tmp_path))
+    result=check_rules(good_draft(n,str(tmp_path)),case_record(n,tmp_path,stage=1))
     assert result['result']=='fail'
     assert 'outside this admission stage' in str(result)
     assert 'engine cannot' not in str(result)
@@ -83,7 +83,7 @@ def test_beacon_is_not_admitted_in_any_legacy_scorer(tmp_path):
 
 
 async def test_every_fixture_and_pair_has_real_engine_differential_evidence(tmp_path):
-    report=await verify(tmp_path/'evidence',stage=2)
+    report=await verify(tmp_path/'evidence')
     assert report['result']=='pass'
     assert len(report['cases'])==5 and len(report['calibration'])==6
     assert all(c['result']=='pass' for c in report['controls'])
@@ -91,7 +91,7 @@ async def test_every_fixture_and_pair_has_real_engine_differential_evidence(tmp_
     rows += [f for p in report['calibration'] for v in p['variants'].values() for f in v['fixtures']]
     assert len(rows)==110 and all(r['result']=='pass' for r in rows)
     assert all(r['engine']['files_preserved'] for r in rows if r['engine']['state']=='finished')
-    assert report['provenance']['real_api_calls']==0 and not report['admitted']  # Stage 2 evidence admits nothing.
+    assert report['provenance']['real_api_calls']==0 and report['admitted'] and report['stage']==2
     assert report['provenance']['source_sha256']['backend/flow_behaviors.py']
     for pair in report['calibration']:
         bad=pair['variants']['bad']['fixtures']
@@ -111,8 +111,8 @@ async def test_every_fixture_and_pair_has_real_engine_differential_evidence(tmp_
     assert all(r['facts']['gate_after_read'] for r in report['cases'][3]['fixtures'])
 
 
-async def test_default_offline_evaluation_omits_stage_two(tmp_path):
-    report=await verify(tmp_path/'stage-one')
+async def test_offline_evaluation_can_narrow_to_stage_one(tmp_path):
+    report=await verify(tmp_path/'stage-one',stage=1)
     assert report['result']=='pass' and report['admitted']
     assert [c['id'] for c in report['cases']]==['F2-01','F2-02']
     assert {p['number'] for p in report['calibration']}=={1,6}
@@ -193,8 +193,7 @@ def test_loop_and_independent_end_controls_use_shared_findings(tmp_path):
     examples={c['id']:relocated(c['spec'],tmp_path) for c in controls(2)}
     loop=check_rules(examples['control_back_edge'],case_record(1,tmp_path))
     assert 'loops are not supported in drafts yet' in str(loop) and 'impossible_wait' not in str(loop)
-    assert check_rules(examples['independent_side_end'],case_record(1,tmp_path))['result']=='fail'
-    assert check_rules(examples['independent_side_end'],case_record(1,tmp_path,stage=2))['result']=='pass'
+    assert check_rules(examples['independent_side_end'],case_record(1,tmp_path))['result']=='pass'
 
 
 async def test_missing_is_not_empty_and_failures_do_not_publish_partial_records(tmp_path):

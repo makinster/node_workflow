@@ -511,7 +511,7 @@ guards cover the entire invocation without resetting between sets. Failed
 calibration blocks cases unless explicitly running the diagnostic override;
 even with that override, the overall result remains fail. Sets 1/2 retain the
 exact original eleven-type admission/contracts; set 3 retains its fifteen types;
-set 4 alone uses the sixteen-type Stage 1 admission.
+set 4 alone uses the seventeen-type Stage 2 admission.
 For multi-set `--replies`, use `{ "1": { "1": [replies...] }, "3": ... }`;
 single-set overrides retain the original case-ID object format.
 
@@ -595,54 +595,56 @@ its 10/10 case score. Runs 000040/000041 keep their 9/10 and 3/4 case scores.
 No judge prompt, frozen expected result, backend service or workflows/ edit.
 
 
-## Family 2 set 4 — Stage 1 admitted (2026-10-31)
+## Family 2 set 4 — Stage 2 admitted (2026-10-31)
 
-**Stage 1** is one split, every path wired directly to one Merge, with the
-collected result used by a later step. `merge_node` is admitted for that shape.
-Wait Until, Merge Beacon and Set/Get Variable are not admitted.
+**Stage 1** is one split, every path wired directly to one Merge, with the collected
+result used by a later step. **Stage 2** adds a path that splits again with its children
+joining the same Merge, Wait Until gates, and same-slot rejoins (either-or routes give one
+value; concurrent paths give a list). `merge_node` and `wait_until_node` are admitted.
+Merge Beacon and Set/Get Variable are not.
 
-`--case-set 4` and `--case-set all` run F2-01 and F2-02. Calibration runs the
-frozen thirty pairs byte-for-byte, then pairs 1 (`collect_vs_pick_one`) and 6
-(`join_vs_shared_end`): 32 pairs / 64 judge calls. F2-03 to F2-05 and pairs 2 to 5
-are Stage 2 and stay opt-in. `fixtures/case_set_4.json` and
-`calibration_set_4.json` hold all five requests / seventeen variants and six pairs.
+`--case-set 4` and `--case-set all` run F2-01 to F2-05. Calibration runs the frozen thirty
+pairs byte-for-byte, then the six set-4 pairs: 36 pairs / 72 judge calls.
+`fixtures/case_set_4.json` and `calibration_set_4.json` hold all five requests / seventeen
+variants and six pairs.
 
-Sets 1, 2 and 3 keep their exact boundaries: `admission.SUITE_SCOPE` gives each
-suite its own palette, and `admission.configure` removes the Merge guidance for
-them. `admission_baseline.json`'s `stage_1` section pins the configured designer
-for those scopes against the digest of unchanged main. Their selected snapshots
-carry `draft_stage: null`, so the stage check below does not apply to them.
+Sets 1, 2 and 3 keep their exact boundaries: `admission.SUITE_SCOPE` gives each suite its
+own palette, `palette_selection.role_ids` its own role list, and `admission.configure`
+removes the Merge and Wait Until guidance. `admission_baseline.json`'s `stage_2` section
+pins the configured designer for those scopes at the same digests as `stage_1`. Their
+selected snapshots carry `draft_stage: null`, so the stage check below does not apply.
 
-Drafter checks (`palette_selection.check_draft`) refuse anything beyond Stage 1 with
-a plain message that says "outside this admission stage", which reaches the one
-structural redraft. `stage_one_problems` reads the flow analysis the check already
-produced; it does no graph walk of its own. It refuses a split inside a path, a
-sub-path join, two paths into one Merge input (concurrent or either-or), a choice
-or error route before Merge, Wait Until, more than one Merge or split alongside a
-Merge, a path ending before Merge and a Merge result that goes straight to End. A
-Merge with no split and control loops are already refused by the shared check. An
-independent split with no Merge stays allowed.
+Drafter checks (`palette_selection.check_draft`) refuse anything beyond the stage with a
+plain message that says "outside this admission stage", which reaches the one structural
+redraft. `draft_stage_problems` reads the flow analysis the check already produced, plus
+the first wire on the Merge's own default and error outputs, because the analysis's control
+rows have no port names. It walks no graph. It refuses a Merge's error wire, a Merge result
+that goes straight to End, a split that does not join an existing Merge or sits inside a
+path with no Merge, and a Wait Until naming a split or nothing. A second Merge in one group,
+a Merge with no split, loops, Beacons, routes escaping a required join and impossible waits
+stop at the shared check first. An independent path may End on its own. An independent
+split with no Merge stays allowed.
 
-`palette_selection.ADMISSION_VERSIONS` moves admission, role schema, contracts and
-cache together. Selected snapshots carry it and a snapshot from another version is
-stale. The role ID list did not change (`join` already existed); the type ID enum
-gained `merge_node`. Provider cache prefixes are content-addressed, so they change
-wherever the text changes. Saved replies carry no version and still replay: they
-were written against the old prompts, so replay checks how today's rules handle old
-answers, not what a model would now write.
+`palette_selection.ADMISSION_VERSIONS` moves admission, role schema, contracts and cache
+together. Selected snapshots carry it and a snapshot from another version is stale. Provider
+cache prefixes are content-addressed, so they change wherever the text changes. Saved
+replies carry no version and still replay: they were written against the old prompts, so
+replay checks how today's rules handle old answers, not what a model would now write.
 
 ```bash
-# F2-01/02 and pairs 1/6, with real local engine evidence.
-python -m tools.draft_trials.family_two --output /fresh/absolute/stage1
-# Explicitly verify withheld Stage 2; grants no node/role/drafter admission.
-python -m tools.draft_trials.family_two --output /fresh/absolute/stage2 --stage 2
+# All requests and pairs, with real local engine evidence.
+python -m tools.draft_trials.family_two --output /fresh/absolute/stage2
+# Only F2-01/02 and pairs 1/6, under the same draft check.
+python -m tools.draft_trials.family_two --output /fresh/absolute/stage1 --stage 1
 ```
 
 The output directory must be fresh and absolute; library isolation is set before
 backend imports. No inference, judge or real-call mode exists in this command.
-A saved run from before set 4 has no set 4 replies, so replaying it with
-`--case-set all` reports F2-01/02 and the four new pair verdicts as `diverged`,
-never as a pass. [Stage 1 audit, replay comparison and sizes](../../docs/audits/family_two_stage1_2026_10_31/README.md).
+A saved run has replies only for what it ran, so replaying an older run reports the missing
+pair verdicts as `diverged`, never as a pass. Replay runs a run's saved case IDs; add
+`--cases` to see the others reported as `diverged`.
+[Stage 2 audit, replay comparison and sizes](../../docs/audits/family_two_stage2_2026_10_31/README.md).
+[Stage 1 audit](../../docs/audits/family_two_stage1_2026_10_31/README.md).
 
 `rules.check_rules` / `evaluate` dispatch explicit set-4 records to the new
 bounded evaluator. It uses `analyze_flow` for graph facts and independently

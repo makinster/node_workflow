@@ -84,7 +84,7 @@ def test_failed_mock_calibration_cases_flag(tmp_path, monkeypatch, capsys,
     original = runner.calibrate
 
     async def failed_calibration(*args, **kwargs):
-        return await original(*args, judge_replies=[runner.meaning('fail')] * 64, **kwargs)
+        return await original(*args, judge_replies=[runner.meaning('fail')] * 72, **kwargs)
 
     monkeypatch.setattr(runner, 'calibrate', failed_calibration)
     assert cli.main() == 1
@@ -95,7 +95,7 @@ def test_failed_mock_calibration_cases_flag(tmp_path, monkeypatch, capsys,
     assert stdout['cases'] == report['case_count'] == expected_cases
     assert report['cases_even_if_calibration_fails'] is continue_cases
     assert all(c['result'] == 'pass' for c in report['cases'])
-    assert len(json.loads((root / 'runs/000001/calibration-report.json').read_text())['fixtures']) == 64
+    assert len(json.loads((root / 'runs/000001/calibration-report.json').read_text())['fixtures']) == 72
 
 
 @pytest.mark.asyncio

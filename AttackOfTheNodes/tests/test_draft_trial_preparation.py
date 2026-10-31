@@ -355,7 +355,7 @@ async def mocked_transport(*args, **kwargs):
         mock.install(stack)
         report = await original(*args, **kwargs)
     assert not mock.replies
-    assert len(mock.calls) == 67
+    assert len(mock.calls) == 75
     return report
 
 runner.batch = mocked_transport

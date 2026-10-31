@@ -46,8 +46,8 @@ def test_committed_saved_run_replays_all_checks_without_mutating_source(tmp_path
     assert case['replay']['consumed'] == 3 and case['replay']['remaining'] == 0
     assert case['selection']['expansion_count'] == 0
     calibration = json.loads((report_path.parent/'calibration-report.json').read_text())
-    assert len(calibration['fixtures']) == 64 and calibration['result'] == 'pass'
-    assert calibration['replay_summary']['same_outcome'] == 64
+    assert len(calibration['fixtures']) == 72 and calibration['result'] == 'pass'
+    assert calibration['replay_summary']['same_outcome'] == 72
     assert all(row['case_rules'] == row['expected'] for row in calibration['fixtures'])
     assert runner.tree(FIXTURE) == before
     assert not list((tmp_path/'trial').rglob('secrets.json'))
@@ -122,10 +122,10 @@ async def test_replay_missing_calibration_reply_diverges_only_that_pair_variant(
     source = copy_run(tmp_path)
     edit(source/'calibration-report.json', lambda r: r['fixtures'].pop(0))
     report = await runner.calibrate(tmp_path/'out', replay=ReplayRun(source))
-    assert report['result'] == 'fail' and len(report['fixtures']) == 64
+    assert report['result'] == 'fail' and len(report['fixtures']) == 72
     assert report['fixtures'][0]['result'] == 'replay_diverged'
     assert report['replay_summary']['diverged'] == 1
-    assert report['replay_summary']['same_outcome'] == 63
+    assert report['replay_summary']['same_outcome'] == 71
 
 
 @pytest.mark.asyncio
@@ -151,9 +151,9 @@ async def test_cached_context_preserves_question_and_never_changes_settings(tmp_
     report = await runner.calibrate(tmp_path/'out')
     assert report['result'] == 'pass'
     calls = [mock.calls[0] for mock in seen]
-    assert len(calls) == 64
+    assert len(calls) == 72
     prefixes = []
-    for pair, call_pair in zip(calibration_pairs()+stage_one_pairs(), [calls[i:i+2] for i in range(0,64,2)]):
+    for pair, call_pair in zip(calibration_pairs()+stage_one_pairs(), [calls[i:i+2] for i in range(0,72,2)]):
         for variant, call in zip(('good', 'bad'), call_pair):
             content = call['messages'][0]['content']
             expected = (tmp_path/'out/calibration'/pair['id']/(variant+'-judge-question.txt')).read_text()
@@ -199,10 +199,10 @@ async def test_all_sets_share_one_calibration_and_keep_exact_admission(tmp_path,
     monkeypatch.setattr(runner, 'calibrate', calibration)
     report = await runner.batch(tmp_path, case_set='all')
     assert seen == [True] and report['result'] == 'pass', report
-    assert report['case_count'] == 26 and report['fully_right'] == {'1':10, '2':10, '3':4, '4':2}
-    assert report['fixture_count'] == 65
-    assert report['model_calls'] == dict(attempted=140, succeeded=140)
-    for suite, count in ((1,31),(2,27),(3,12),(4,6)):
+    assert report['case_count'] == 29 and report['fully_right'] == {'1':10, '2':10, '3':4, '4':5}
+    assert report['fixture_count'] == 73
+    assert report['model_calls'] == dict(attempted=157, succeeded=157)
+    for suite, count in ((1,31),(2,27),(3,12),(4,15)):
         section = report['sets'][str(suite)]
         assert section['model_calls'] == dict(attempted=count,succeeded=count)
         assert section['calibration_shared'] and section['calibration'] == 'pass'
@@ -294,7 +294,7 @@ def test_affected_reads_committed_worktree_and_untracked_changes(tmp_path):
 
 
 @pytest.mark.parametrize('flags', [
-    ['--case-set','1,1'], ['--case-set','5'], ['--case-set','all','--cases','10'], ['--case-set','4','--cases','3'],
+    ['--case-set','1,1'], ['--case-set','5'], ['--case-set','all','--cases','10'], ['--case-set','4','--cases','6'],
     ['--replay',str(FIXTURE),'--real-calls','--budget','.2'],
     ['--replay',str(FIXTURE),'--replies','absent.json'],
     ['--replay',str(FIXTURE),'--prepare'], ['--affected','no-such-base']])
@@ -332,7 +332,7 @@ def test_comma_list_cli_runs_once_with_separate_set_reports(tmp_path):
     out = json.loads(result.stdout)
     assert out['fully_right'] == {'2':1,'3':1}
     report = json.loads(Path(out['report']).read_text())
-    assert report['model_calls'] == dict(attempted=70,succeeded=70)
+    assert report['model_calls'] == dict(attempted=78,succeeded=78)
     assert len(list(Path(out['report']).parent.glob('**/calibration-report.json'))) == 1
     replay = subprocess.run([sys.executable,'-m','tools.draft_trials','--trial-root',str(tmp_path/'replay'),
         '--replay',str(Path(out['report']).parent)],cwd=runner.APP,text=True,capture_output=True,timeout=60)

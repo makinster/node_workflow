@@ -251,7 +251,7 @@
     "case": 3,
     "case_set": 4,
     "required_stage": 2,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 3",
@@ -485,7 +485,7 @@
     "case": 5,
     "case_set": 4,
     "required_stage": 2,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 5",
@@ -723,7 +723,7 @@
     "case": 4,
     "case_set": 4,
     "required_stage": 2,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 4",
@@ -913,7 +913,7 @@
     "case": 3,
     "case_set": 4,
     "required_stage": 2,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 3",

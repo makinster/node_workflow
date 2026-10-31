@@ -123,5 +123,99 @@
       "original": "7f14eb1ea8efd35de3789c8fa667b1b717ea1ac928747e94fe57b6157bc05ef0",
       "helpers": "64c07f7cdb3fcab22ac73c7e84b96c2c4f6d947532b1fafbabb6bc22b318709a"
     }
+  },
+  "stage_2": {
+    "base_revision": "b52ed36",
+    "admission": {
+      "admission": 3,
+      "role_schema": 3,
+      "contracts": 3,
+      "cache": 3,
+      "draft_stage": 2
+    },
+    "type_ids": [
+      "branch_node",
+      "check_reply_node",
+      "concat_node",
+      "conditional_node",
+      "context_pack_node",
+      "end_node",
+      "file_output_node",
+      "file_reader_node",
+      "find_lines_node",
+      "json_path_node",
+      "merge_node",
+      "read_lines_node",
+      "start_node",
+      "text_output_node",
+      "text_transform_node",
+      "user_text_input_node",
+      "wait_until_node"
+    ],
+    "frozen_helper_type_ids": [
+      "branch_node",
+      "check_reply_node",
+      "concat_node",
+      "conditional_node",
+      "context_pack_node",
+      "end_node",
+      "file_output_node",
+      "file_reader_node",
+      "find_lines_node",
+      "json_path_node",
+      "read_lines_node",
+      "start_node",
+      "text_output_node",
+      "text_transform_node",
+      "user_text_input_node"
+    ],
+    "role_ids": [
+      "ask_text",
+      "check_json_reply",
+      "choose_path",
+      "compose_text",
+      "error_route",
+      "extract_json",
+      "find_in_file",
+      "finish",
+      "join",
+      "pack_context",
+      "parallel_paths",
+      "persistent_state",
+      "read_excerpt",
+      "read_file",
+      "show_saved_path",
+      "show_text",
+      "start",
+      "transform_text",
+      "vault_state",
+      "wait_for_step",
+      "write_file"
+    ],
+    "withheld_type_ids": [
+      "branch_end_node",
+      "get_variable_node",
+      "set_variable_node"
+    ],
+    "case_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "pair_ids": [
+      "collect_vs_pick_one",
+      "handoff_vs_lost_child",
+      "either_or_vs_escape",
+      "gate_vs_impossible_wait",
+      "same_slot_list_vs_overwrite",
+      "join_vs_shared_end"
+    ],
+    "stage_2_sha256": "fa1a9e6b36020ed9561e89253b1b3549f3eef9df4b43beffa5e753426fea4742",
+    "frozen_designer_sha256": {
+      "original": "7f14eb1ea8efd35de3789c8fa667b1b717ea1ac928747e94fe57b6157bc05ef0",
+      "helpers": "64c07f7cdb3fcab22ac73c7e84b96c2c4f6d947532b1fafbabb6bc22b318709a"
+    }
   }
 }

@@ -7,7 +7,7 @@ node configs cannot use additionalProperties:false without changing its format.
 import json
 from pathlib import Path
 
-from backend.palette_selection import ADMITTED, ROLE_TYPES, MAX_IDS
+from backend.palette_selection import ADMITTED, MAX_IDS, role_ids
 
 
 def obj(properties):
@@ -23,7 +23,7 @@ def array(items, **constraints):
 
 
 def analysis_schema(admitted=ADMITTED):
-    role = text(enum=sorted(ROLE_TYPES))
+    role = text(enum=sorted(role_ids(frozenset(admitted))))
     req_ids = array(text(minLength=1), minItems=1)
     reason = text(minLength=1, maxLength=512)
     role_row = dict(role=role, requirement_ids=req_ids, reason=reason)

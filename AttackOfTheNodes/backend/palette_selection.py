@@ -19,14 +19,16 @@ ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path r
 HELPERS = frozenset('find_lines_node read_lines_node check_reply_node context_pack_node'.split())
 # Frozen boundary of helper set 3; Merge is added beside it, not into it.
 HELPER_PALETTE = ORIGINAL_PALETTE | HELPERS
-# Family 2 Stage 1. Wait Until and sub-path joins wait for Stage 2; Set/Get are not in this milestone.
+# Family 2. Stage 1 is Merge; Stage 2 adds Wait Until. Set/Get are not in this milestone.
 STAGE_ONE = frozenset({'merge_node'})
-ADMITTED = HELPER_PALETTE | STAGE_ONE
+STAGE_TWO = frozenset({'wait_until_node'})
+STAGE_TWO_ROLES = frozenset({'wait_for_step'})
+ADMITTED = HELPER_PALETTE | STAGE_ONE | STAGE_TWO
 # These move together: admission changes the role schema, contracts and provider
 # cache prefixes. A snapshot from another version is stale, never reused.
-ADMISSION_VERSIONS = dict(admission=2, role_schema=2, contracts=2, cache=2, draft_stage=1)
+ADMISSION_VERSIONS = dict(admission=3, role_schema=3, contracts=3, cache=3, draft_stage=2)
 OUTSIDE_STAGE = 'This is outside this admission stage: '
-ONE_JOIN = 'Use one split, with each path wired directly to its own Merge input.'
+ONE_JOIN = 'Use one split, with its paths or their sub-paths wired to one Merge.'
 MAX_IDS = 64
 CONTRACT_LIMIT = 50000
 CONTEXT_LIMIT = 100000
@@ -45,7 +47,8 @@ ROLE_TYPES = {
     'transform_text': [('text_transform_node',)], 'choose_path': [('conditional_node',)],
     'parallel_paths': [('branch_node',)], 'compose_text': [('concat_node',)],
     'extract_json': [('json_path_node',)],
-    'join': [('merge_node',)], 'persistent_state': [('remember_node',)],
+    'join': [('merge_node',)], 'wait_for_step': [('wait_until_node',)],
+    'persistent_state': [('remember_node',)],
     'vault_state': [('concat_node',)], 'error_route': [('text_output_node',)],
 }
 # Small support closure, keyed by an explicit role, not service/node families.
@@ -53,6 +56,7 @@ SUPPORT = {
     'always': ('start_node', 'end_node'),
     'find_in_file': (), 'read_excerpt': (), 'check_json_reply': (), 'pack_context': (),
     'join': ('merge_node',),
+    'wait_for_step': ('wait_until_node',),
     'vault_state': ('concat_node',),
     'error_route': ('text_output_node',),
 }
@@ -71,7 +75,13 @@ SYNONYMS = {
     'compose_text': ('combine', 'concatenate', 'concat'),
     'extract_json': ('json', 'field'),
     'join': ('join', 'merge', 'collect results', 'together after'),
+    'wait_for_step': ('wait until', 'wait for', 'hold until'),
 }
+
+
+def role_ids(admitted):
+    """Role IDs a drafting boundary may name; frozen boundaries keep theirs."""
+    return frozenset(ROLE_TYPES) - (frozenset() if STAGE_TWO <= admitted else STAGE_TWO_ROLES)
 
 
 def digest(value):
@@ -290,38 +300,45 @@ def read_snapshot(text):
         raise NodeError('selection_invalid', 'Missing or stale selected contract snapshot.') from None
 
 
-def stage_one_problems(flow):
-    """Plain refusals of anything beyond Stage 1, read from analyze_flow's export.
+def _first_wire(draft, source):
+    """The target handle of a draft's own first wire from one output, or None.
+
+    analyze_flow's control rows do not name ports. This reads one wire and walks nothing.
+    """
+    return next((wire['to'].partition('.')[0] for wire in draft.get('connections', [])
+                 if wire.get('from') == source), None)
+
+
+def draft_stage_problems(flow, draft):
+    """Plain refusals of anything beyond the current draft stage.
 
     The analysis owns the graph facts and admission stage; this only names them.
     The engine runs these shapes: a refusal here says nothing about what it can do.
     """
     kinds = {nid: str(getattr(p['kind'], 'value', p['kind'])) for nid, p in flow['profiles'].items()}
     merges = flow['merges']
+    joined = {root for merge in merges.values() for root in merge['group_roots']}
     problems = []
-    if 'wait' in kinds.values():
-        problems.append('Wait Until gates are not available in drafts yet. Remove the Wait Until node.')
-    if any(h['lineage'] for group in flow['groups'].values() for h in group['handoffs']):
-        problems.append('a split inside a path is not available in drafts yet. ' + ONE_JOIN)
-    if merges:
-        if len(merges) > 1:
-            problems.append('drafts allow one Merge. ' + ONE_JOIN)
-        if sum(kind == 'fork' for kind in kinds.values()) > 1:
-            problems.append('a draft with a Merge allows one split. ' + ONE_JOIN)
-        for mid, merge in merges.items():
-            if not merge['group_roots']:
-                problems.append('a Merge with no split is not available in drafts. ' + ONE_JOIN)
-                continue
-            arrivals = [a for slot in merge['slots'].values() for a in slot['producers']]
-            if any(len(slot['producers']) > 1 for slot in merge['slots'].values()):
-                problems.append('two paths into one Merge input are not available in drafts yet. Give each path its own input.')
-            if any(a['guards'] for a in arrivals):
-                problems.append('a choice or error route before Merge is not available in drafts yet. ' + ONE_JOIN)
-            if merge['independent_ends']:
-                problems.append('every path must reach the Merge; a path ending first is not available in drafts yet. ' + ONE_JOIN)
-            if not any(d['event'] == 'control' and d['source'] == mid and kinds.get(d['target']) != 'finish'
-                       for d in flow['dependencies']):
-                problems.append("the Merge's collected result must feed a later step before End.")
+    if flow['back_edges']:
+        problems.append('loops are not supported in drafts yet. Remove the connection that goes back to an earlier step.')
+    if 'beacon' in kinds.values():
+        problems.append('Merge Beacons are not available in drafts. Wire each path directly to the Merge.')
+    for nid, profile in flow['profiles'].items():
+        if kinds[nid] == 'wait' and (not profile['targets'] or any(kinds.get(t) == 'fork' for t in profile['targets'])):
+            problems.append('Wait Until must name the step it waits for, not a split. Set target_node_ids to that step.')
+    for root, group in flow['groups'].items():
+        if root not in joined and (merges or any(h['lineage'] for h in group['handoffs'])):
+            problems.append('a split inside a path, or beside a Merge, must have its paths join that Merge. ' + ONE_JOIN)
+    for mid, merge in merges.items():
+        if not merge['group_roots']:
+            problems.append('a Merge with no split is not available in drafts. ' + ONE_JOIN)
+            continue
+        if any(set(other['group_roots']) & set(merge['group_roots']) for oid, other in merges.items() if oid != mid):
+            problems.append('a split and its sub-paths may use only one Merge. ' + ONE_JOIN)
+        if _first_wire(draft, mid + '.error') is not None:
+            problems.append("a route leaving the Merge is not available in drafts. Remove the Merge's error wire.")
+        if kinds.get(_first_wire(draft, mid + '.default'), 'finish') == 'finish':
+            problems.append("the Merge's collected result must feed a later step before End.")
     if flow['admission_stage'] > ADMISSION_VERSIONS['draft_stage'] and not problems:
         problems.append(ONE_JOIN)
     return [OUTSIDE_STAGE + p for p in dict.fromkeys(problems)]
@@ -338,7 +355,7 @@ def check_draft(factory, draft, text, flow=None):
     if receipt['draft_stage'] is not None:
         if flow is None:
             raise NodeError('selection_invalid', 'Draft check needs the shared flow analysis.')
-        problems = stage_one_problems(flow)
+        problems = draft_stage_problems(flow, draft)
         if problems:
             raise NodeError('spec_invalid', 'Workflow spec did not pass.\n' + '\n'.join(problems),
                             details=dict(problems=problems))
