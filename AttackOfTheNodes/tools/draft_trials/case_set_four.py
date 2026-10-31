@@ -75,48 +75,76 @@ def fixture_variants(number):
 
 def good_draft(number, root='ROOT', *, same_slot=False):
     nodes, edges = {}, []
-    def node(h, t, **c): nodes[h] = dict(type=t+'_node', config=c)
-    def edge(a,b,port='default',slot='input'): edges.append({'from':a+'.'+port,'to':b+'.'+slot})
-    def read(h, filename): node(h,'file_reader',file_path=root+'/'+filename,input_source='Configured')
+    def node(h, t, **c):
+        nodes[h] = dict(type=t+'_node', config=c)
+    def edge(a,b,port='default',slot='input'):
+        edges.append({'from':a+'.'+port,'to':b+'.'+slot})
+    def read(h, filename):
+        node(h,'file_reader',file_path=root+'/'+filename,input_source='Configured')
     node('start','start',greeting='')
     node('split','branch',branch_count=3 if number == 2 else 2)
     node('join','merge')
     node('show','text_output',label='')
     node('end','end',record_line=False)
-    edge('start','split'); edge('join','show'); edge('show','end')
+    edge('start','split')
+    edge('join','show')
+    edge('show','end')
     if number == 1:
         for h,filename,port in [('a','report-a.txt','path_a'),('b','report-b.txt','path_b')]:
-            read(h,filename); edge('split',h,port); edge(h,'join',slot=port)
+            read(h,filename)
+            edge('split',h,port)
+            edge(h,'join',slot=port)
         template='A: {input[path_a]}\nB: {input[path_b]}'
     elif number == 2:
         for h,filename,port,key in [('value','value.json','path_a','value'),('flag','flag.json','path_b','flag'),('note','note.txt','path_c',None)]:
-            read(h,filename); edge('split',h,port)
+            read(h,filename)
+            edge('split',h,port)
             if key:
-                node(h+'_field','json_path',path=key); edge(h,h+'_field'); h+='_field'
+                node(h+'_field','json_path',path=key)
+                edge(h,h+'_field')
+                h+='_field'
             edge(h,'join',slot=port)
         template='Value: {input[path_a]}\nFlag: {input[path_b]}\nNote: {input[path_c]}'
     elif number == 3:
-        read('slow','slow.txt'); read('gather','gather.txt'); node('children','branch',branch_count=2)
-        edge('split','slow','path_a'); edge('split','gather','path_b'); edge('slow','join',slot='path_a'); edge('gather','children')
+        read('slow','slow.txt')
+        read('gather','gather.txt')
+        node('children','branch',branch_count=2)
+        edge('split','slow','path_a')
+        edge('split','gather','path_b')
+        edge('slow','join',slot='path_a')
+        edge('gather','children')
         for h,op,port,slot in [('upper','uppercase','path_a','path_b'),('lower','lowercase','path_b','path_b' if same_slot else 'path_c')]:
-            node(h,'text_transform',operation=op); edge('children',h,port); edge(h,'join',slot=slot)
+            node(h,'text_transform',operation=op)
+            edge('children',h,port)
+            edge(h,'join',slot=slot)
         template=('Slow: {input[path_a]}\nUpper: {input[path_b][0]}\nLower: {input[path_b][1]}' if same_slot else
                   'Slow: {input[path_a]}\nUpper: {input[path_b]}\nLower: {input[path_c]}')
     elif number == 4:
-        read('read','source.txt'); node('wait','wait_until',target_node_ids=['read'])
+        read('read','source.txt')
+        node('wait','wait_until',target_node_ids=['read'])
         # Show forwards its label as part of its value: blank is deliberate.
         node('ready','text_output',template='Ready',label='')
-        edge('split','read','path_a'); edge('split','wait','path_b'); edge('read','join',slot='path_a')
-        edge('wait','ready'); edge('ready','join',slot='path_b')
+        edge('split','read','path_a')
+        edge('split','wait','path_b')
+        edge('read','join',slot='path_a')
+        edge('wait','ready')
+        edge('ready','join',slot='path_b')
         template='File: {input[path_a]}\nStatus: {input[path_b]}'
     elif number == 5:
-        read('note','note.txt'); read('choice','choice.txt')
+        read('note','note.txt')
+        read('choice','choice.txt')
         node('choose','conditional',condition_type='equals',right_value='yes',left_value_source='input')
-        edge('split','note','path_a'); edge('split','choice','path_b'); edge('choice','choose'); edge('note','join',slot='path_a')
+        edge('split','note','path_a')
+        edge('split','choice','path_b')
+        edge('choice','choose')
+        edge('note','join',slot='path_a')
         for h,port,text in [('yes','true','Approved'),('no','false','Needs review')]:
-            node(h,'concat',template=text); edge('choose',h,port); edge(h,'join',slot='path_b')
+            node(h,'concat',template=text)
+            edge('choose',h,port)
+            edge(h,'join',slot='path_b')
         template='Note: {input[path_a]}\nDecision: {input[path_b]}'
-    else: raise ValueError('unknown set 4 case')
+    else:
+        raise ValueError('unknown set 4 case')
     nodes['show']['config']['template']=template
     return dict(format='aotn-workflow/1',name=f'Family 2 case {number}',nodes=nodes,connections=edges)
 
@@ -124,30 +152,36 @@ def good_draft(number, root='ROOT', *, same_slot=False):
 def calibration_pairs(*, stage=1):
     pairs=[]
     def pair(number,name,case,mutate,**kwargs):
-        good=good_draft(case,**kwargs); bad=deepcopy(good); mutate(bad)
+        good=good_draft(case,**kwargs)
+        bad=deepcopy(good)
+        mutate(bad)
         pairs.append(dict(id=name,number=number,case=case,case_set=4,required_stage=STAGES[case],
                           admitted=False,good=good,bad=bad))
     def pick(s):
         s['nodes']['pick']=dict(type='json_path_node',config={'path':'path_a'})
         for e in s['connections']:
-            if e['from']=='join.default': e['to']='pick.input'
+            if e['from']=='join.default':
+                e['to']='pick.input'
         s['connections'].append({'from':'pick.default','to':'show.input'})
         s['nodes']['show']['config']['template']='{input}'
     pair(1,'collect_vs_pick_one',2,pick)
     def lost(s):
         for e in s['connections']:
-            if e['from']=='lower.default': e['to']='end.input'
+            if e['from']=='lower.default':
+                e['to']='end.input'
         s['nodes']['show']['config']['template']='Slow: {input[path_a]}\nUpper: {input[path_b]}'
     pair(2,'handoff_vs_lost_child',3,lost)
     def escape(s):
         for e in s['connections']:
-            if e['from']=='no.default': e['to']='end.input'
+            if e['from']=='no.default':
+                e['to']='end.input'
     pair(3,'either_or_vs_escape',5,escape)
     pair(4,'gate_vs_impossible_wait',4,lambda s:s['nodes']['wait']['config'].update(target_node_ids=['show']))
     pair(5,'same_slot_list_vs_overwrite',3,lambda s:s['nodes']['show']['config'].update(
         template='Slow: {input[path_a]}\nUpper: {input[path_b]}\nLower: {input[path_b][1]}'),same_slot=True)
     def shared_end(s):
-        del s['nodes']['join']; s['connections']=[e for e in s['connections'] if not e['from'].startswith('join.') and not e['to'].startswith('join.')]
+        del s['nodes']['join']
+        s['connections']=[e for e in s['connections'] if not e['from'].startswith('join.') and not e['to'].startswith('join.')]
         s['nodes']['show']['config']['template']='A: {input}'
         s['nodes']['second']=dict(type='text_output_node',config=dict(label='',template='B: {input}'))
         s['connections'] += [{'from':'a.default','to':'show.input'}, {'from':'b.default','to':'second.input'}, {'from':'second.default','to':'end.input'}]

@@ -18,7 +18,8 @@ def controls(stage=1):
     repeated=deepcopy(plain)
     repeated['nodes']['again']=dict(type='merge_node',config={})
     for edge in repeated['connections']:
-        if edge['from']=='join.default':edge['to']='again.path_a'
+        if edge['from']=='join.default':
+            edge['to']='again.path_a'
     repeated['connections'].append({'from':'again.default','to':'show.input'})
     add('second_merge_same_group',repeated,'preflight_rejected','fail')
     loop=deepcopy(plain)
@@ -32,11 +33,13 @@ def controls(stage=1):
     independent['connections'].append({'from':'split.path_c','to':'side.input'})
     add('independent_side_end',independent,'finished','pass',required_stage=2)
     race=deepcopy(plain)
-    for h in ('a','b'):race['nodes'][h]['config'].update(vault_write=True,vault_write_key='shared')
+    for h in ('a','b'):
+        race['nodes'][h]['config'].update(vault_write=True,vault_write_key='shared')
     race['nodes']['format']=dict(type='concat_node',config={'template':'A: {input[path_a]}\nB: {input[path_b]}\nWinner: {shared}'})
     race['nodes']['show']['config']['template']='{input}'
     for edge in race['connections']:
-        if edge['from']=='join.default':edge['to']='format.input'
+        if edge['from']=='join.default':
+            edge['to']='format.input'
     race['connections'].append({'from':'format.default','to':'show.input'})
     add('shared_vault_replacement_unordered',race,'finished','fail',required_stage=2)
     return [c for c in result if c['required_stage']<=stage]

@@ -35,9 +35,12 @@ def provenance():
 
 
 def typed_equal(a,b):
-    if type(a)!=type(b): return False
-    if isinstance(a,dict): return list(a)==list(b) and all(typed_equal(a[k],b[k]) for k in a)
-    if isinstance(a,list): return len(a)==len(b) and all(typed_equal(x,y) for x,y in zip(a,b))
+    if type(a)!=type(b):
+        return False
+    if isinstance(a,dict):
+        return list(a)==list(b) and all(typed_equal(a[k],b[k]) for k in a)
+    if isinstance(a,list):
+        return len(a)==len(b) and all(typed_equal(x,y) for x,y in zip(a,b))
     return a==b
 
 
@@ -83,10 +86,12 @@ async def verify(output,*,stage=1):
     from .case_set_four import case_record,fixture_variants,good_draft,calibration_pairs,case_ids
     from .rules_family_two import check_rules
     output=Path(output)
-    cases=[];pairs=[]
+    cases=[]
+    pairs=[]
     for n in case_ids(stage):
         c=case_record(n,output/'fixtures'/f'F2-{n:02d}',stage=stage)
-        spec=good_draft(n,c['root']); rules=check_rules(spec,c)
+        spec=good_draft(n,c['root'])
+        rules=check_rules(spec,c)
         rows=[await evidence(spec,c,v,order) for v in fixture_variants(n) for order in ('forward','reverse')]
         cases.append(dict(id=c['key'],required_stage=c['required_stage'],admitted=False,request=c['request'],
                           rules=rules,result='pass' if rules['result']=='pass' and all(r['result']=='pass' and r['correct_output'] for r in rows) else 'fail',fixtures=rows))
@@ -117,7 +122,8 @@ async def verify(output,*,stage=1):
         ok=rules['result']==control['expected_draft'] and all(r['state']==control['expected_engine'] for r in runs)
         if control['id']=='shared_vault_replacement_unordered':
             ok=ok and runs[0]['outputs']!=runs[1]['outputs']
-        if control['id']=='standalone_merge': ok=ok and all(r['outputs']==['pass through'] for r in runs)
+        if control['id']=='standalone_merge':
+            ok=ok and all(r['outputs']==['pass through'] for r in runs)
         control_rows.append(dict(id=control['id'],required_stage=control['required_stage'],result='pass' if ok else 'fail',
                                  rules=rules,engine=runs,expected_engine=control['expected_engine']))
     report=dict(schema_version=1,case_set=4,evaluation_only=True,stage=stage,admitted=False,
@@ -152,4 +158,5 @@ def main():
     return 0 if report['result']=='pass' else 1
 
 
-if __name__=='__main__': raise SystemExit(main())
+if __name__=='__main__':
+    raise SystemExit(main())
