@@ -477,6 +477,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
             self.factory,
             secrets_manager=self.secrets_manager,
         )
+        self.show_validation_result(result)
+
+    def show_validation_result(self, result: dict) -> None:
+        """Show shared checker issues for manual validation or a refused Run."""
+        panel = self.query_one(ValidationPanel)
+        panel.display = True
+        self._issue_hint = None
         errors = result.get("errors", [])
         warnings = result.get("warnings", [])
         self._flagged_node_ids = {

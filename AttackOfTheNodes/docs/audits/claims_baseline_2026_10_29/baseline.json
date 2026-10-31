@@ -4496,7 +4496,7 @@
     "new_errors": []
   },
   "flow_analysis_recheck": {
-    "source_revision": "eaba8b354d05dea6ccd2e59d6b27da3ebf1cfbd7",
+    "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e",
     "date": "2026-10-31",
     "sources": {
       "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
@@ -4505,8 +4505,8 @@
       "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
       "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
       "tests/test_flow_behaviors.py": "e4303ff2a3ebe56bef7dad04afcc1d3ef6f1dba84f87e2b71697d02b51904cb5",
-      "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454"
+      "tests/test_flow_startup_refusals.py": "2eddf3dfb2938773e747f7a7d8cd5f057843e37aeb58a0a4907771d50d44565e"
     },
-    "scope": "Normal startup refuses every error-level shared flow finding; final flow records and real-engine receipts refreshed. No admission change; local dependency recheck is not independent admission review."
+    "scope": "App Run uses existing full validator before execution. Startup flow safety net, node claims and admission unchanged; changed UI/test source dependencies rechecked locally, not independent admission review."
   }
 }

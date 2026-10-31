@@ -1,11 +1,20 @@
 # App Run validator audit — PR #165 follow-up
 
-Scope: report only. `frontend/app.py::action_run_workflow` saves, switches to the
-execution screen and schedules `_start_workflow`; neither calls
-`validate_workflow`. `_start_workflow` catches contract/flow startup refusals.
-The flow adapter now rejects **all error-level findings from the existing shared
-analysis**, including graphs with no Merge. It does not run the other validator
-checks. No general validation was added to App Run.
+## Current App Run status
+
+The follow-up based on main `821688d` closes the **App Run** bypass: Run calls the
+existing full validator before saving or changing screens. Errors appear in the
+editor's manual Validation panel and prevent startup; warnings remain runnable.
+The [App Run audit](../app_run_validation_2026_10_31/README.md) records all 17
+bundled graph objects, starter, runtime-value checks and the internal `output_log` compatibility
+exception (reported, not loosened). No validator rule or
+backend startup guard was changed.
+
+The raw `start_workflow()` probes below are historical evidence of the direct
+engine entry point, **not current App Run behavior**. They remain relevant for
+callers that skip full validation. Direct startup keeps its shared-flow and
+contract-input safety nets; it does not run the general validator. Subworkflow
+and RunService behavior were not changed in this App Run task.
 
 ## Confirmed real startup probes
 
@@ -16,7 +25,8 @@ simple Start→End path ran. “Started” means a run was created, not that the
 node can execute successfully. This proves lack of full preflight, not successful
 handling of bad configuration.
 
-The following validator errors **still reach a run** through that entry point:
+The following validator errors reached a run through **raw direct startup** in
+the recorded probes; App Run now rejects them during preflight:
 
 - `deleted_node_stub` (tombstone), `multiple_start_nodes`, `unknown_node_type`,
   `missing_node`, `undeclared_port`.
@@ -29,8 +39,8 @@ that independent contract-input guard remains in place.
 
 ## Remaining validator-only errors: source inventory
 
-These additional validator errors have **no corresponding startup preflight
-check**, from reviewing all `errors.append` sites in `backend/validator.py` and
+These additional validator errors have **no corresponding raw-engine preflight
+check** (they are checked by App Run), from reviewing all `errors.append` sites in `backend/validator.py` and
 the startup path. They were not each reproduced as separate runtime probes:
 
 | Area | Codes |

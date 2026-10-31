@@ -221,7 +221,8 @@ The existing draft admission gate is unchanged.
 Unproved inputs, already-joined paths, unrelated splits and collecting graphs
 beyond analysis bounds are app-validation errors. Direct automatic startup
 raises `MergePlanError`, a dedicated `ValueError` subclass, before creating a run.
-App Run displays it as `Can't start: ...` and remains usable; subworkflow calls
+App Run normally shows the finding in its Validation panel; its startup handler
+retains `Can't start: ...` for callers that skip preflight. Subworkflow calls
 translate it into the declared, non-retryable `child_flow_invalid` error, which
 can be routed through the calling node's error output. Messages say which paths
 to reconnect, without exposing the analyser's internal vocabulary.
@@ -239,8 +240,12 @@ creating a run, including required paths escaping Merge, omitted required slots
 and impossible or missing Wait targets. The same `MergePlanError` surfaces in
 App Run and as `child_flow_invalid` in child calls. Explicit MergePlan runtime
 fixtures remain supported. No second analysis is added. Other general validator
-checks remain an entry-point responsibility: App Run still does not call the
-full validator. The block-3 validator audit lists those remaining omissions.
+checks remain an entry-point responsibility. App Run now calls the existing full
+validator before saving or switching to execution. Errors stay in the editor's
+Validation panel; warnings allow a run. Manual validation shares the same issue
+renderer. Direct backend startup retains only its existing flow/contract guards;
+this UI preflight does not change subworkflow or RunService behavior. See the
+[App Run audit](audits/app_run_validation_2026_10_31/README.md).
 
 Five input slots is the default, not a fixed maximum. Frontend configuration
 chooses actual slots/Beacon edges through WorkflowMap; refresh is not a license
