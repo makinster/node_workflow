@@ -6,6 +6,23 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Explain blocked drafts before structural validation
+
+Clean worktree `/home/makin/src/nw-blocked-draft-reason`, branch
+`codex/blocked-draft-reason`, from main `b52ed36`. Mock replies reproduced the
+lost reason for a blocked draft with empty nodes. Six existing-type helper nodes
+and one replaced wire send the first blocked reply to the existing Needs review
+output, showing its reason and blocked requirements without check/redraft/save
+or a build command. Other drafts keep the exact raw reply and structural retry.
+
+Mock tests cover all four sets (including set 4 case 2), ready empty nodes and
+existing repair success/failure behavior. All pre-existing node configs/text in
+configured sets 1–3 equal the base; only the new blocked message applies to them.
+Refreshed only `stage_1.frozen_designer_sha256.original` and `.helpers` in
+`tools/draft_trials/fixtures/admission_baseline.json` because those pins cover the
+whole graph. No runtime fingerprint, admission, palette selection, drafting
+guidance or scoring changes. No paid/API calls. Full suite: 5,199 passed, 187 skipped (`pytest -n auto`, 62.28 seconds).
+
 ## 2026-10-31 — App Run uses the shared checker
 
 From main `821688d`, `codex/app-run-validation`: Run validates before saving or

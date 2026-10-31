@@ -22,6 +22,18 @@ Beacon and Set/Get stay out. F2-03/04/05 and pairs 2 to 5 join the normal run an
 prompts. The Stage 1 limit is closed: a Merge wired on only through its error output is
 refused. No API calls were made, so this shows nothing yet about drafting quality.
 [Stage 2 audit, replay comparison and paid-run watch list](audits/family_two_stage2_2026_10_31/README.md).
+## Blocked draft explanation (2026-10-31)
+
+On `codex/blocked-draft-reason`, based on main `b52ed36`, a first blocked draft
+uses the existing Needs review output to show its reason and blocked requirements
+before the structural check. No redraft, saved workflow or build command follows.
+Ready/unspecified-status drafts retain the check and one structural redraft.
+All existing node configs and prompts for sets 1–3 are identical to the base;
+the new blocked message applies to every set. Only the two configured-designer
+pins (`original`, `helpers`) are refreshed; no runtime fingerprints changed.
+Mock replies cover all four sets, including set 4 case 2. No API calls or
+admission/scoring/guidance changes. Full-suite results are recorded in the latest
+Session Log entry.
 
 ## Family 2 Stage 1 admission (2026-10-31)
 

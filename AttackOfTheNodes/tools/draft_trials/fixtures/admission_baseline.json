@@ -120,8 +120,8 @@
     ],
     "stage_1_sha256": "4b2c6db43f86f6648fe652484b8579e2593dadd1646375351138172bc5bf2c35",
     "frozen_designer_sha256": {
-      "original": "5cd83ba518c3f08d130056ddea795983d9e3d28c6464f102f3d7eed481bbf9aa",
-      "helpers": "d9c0dd4a98b48c3989e528475b9277fa4a2906a3cf79dc8bff4b91f51c356b22"
+      "original": "7f14eb1ea8efd35de3789c8fa667b1b717ea1ac928747e94fe57b6157bc05ef0",
+      "helpers": "64c07f7cdb3fcab22ac73c7e84b96c2c4f6d947532b1fafbabb6bc22b318709a"
     }
   },
   "stage_2": {
@@ -214,8 +214,8 @@
     ],
     "stage_2_sha256": "fa1a9e6b36020ed9561e89253b1b3549f3eef9df4b43beffa5e753426fea4742",
     "frozen_designer_sha256": {
-      "original": "5cd83ba518c3f08d130056ddea795983d9e3d28c6464f102f3d7eed481bbf9aa",
-      "helpers": "d9c0dd4a98b48c3989e528475b9277fa4a2906a3cf79dc8bff4b91f51c356b22"
+      "original": "7f14eb1ea8efd35de3789c8fa667b1b717ea1ac928747e94fe57b6157bc05ef0",
+      "helpers": "64c07f7cdb3fcab22ac73c7e84b96c2c4f6d947532b1fafbabb6bc22b318709a"
     }
   }
 }

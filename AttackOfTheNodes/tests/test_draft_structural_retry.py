@@ -112,3 +112,40 @@ async def test_retry_prompt_and_contracts_have_context_headroom():
     contracts, _ = await contract_inventory()
     assert len(prompt) + len(contracts) <= .8 * spec['nodes']['draft_retry']['config']['context_limit']
     assert spec['nodes']['draft_retry']['config']['max_tokens'] == spec['nodes']['draft']['config']['max_tokens']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('case_set,number', [(1, 7), (2, 1), (3, 1), (4, 2)])
+async def test_blocked_empty_draft_explains_stop_without_check_retry_or_save(tmp_path, case_set, number):
+    case = case_record(number, tmp_path / f'trial/cases/{number}/fixtures', case_set)
+    good = good_draft(number, case['root'], case_set)
+    blocked = dict(good, status='blocked', nodes={},
+                   reason='The selected contracts cannot preserve the requested ordering.',
+                   blocked_requirements=['r1: preserve ordering', 'r2: show both results'])
+    report = await runner.run_case(number, tmp_path / 'trial', tmp_path / 'library', case_set=case_set, replies=[
+        runner.requirements(case), blocked])
+    directory = tmp_path / f'trial/cases/{number}'
+    run = json.loads((directory / 'designer-run.json').read_text())
+    shown = '\n'.join(run['outputs'])
+    assert blocked['reason'] in shown
+    assert all(requirement in shown for requirement in blocked['blocked_requirements'])
+    assert 'aotn build' not in shown
+    assert report['calls']['attempted'] == 2
+    assert not report['errors']
+    assert not report['draft_retry']['requested']
+    assert not any(step['handle'] in {'check', 'draft_retry', 'check_retry', 'judge', 'write'}
+                   for step in report['gate_evidence'] if step['status'] == 'running')
+    assert not list((directory / 'drafts').glob('*'))
+
+
+@pytest.mark.asyncio
+async def test_ready_empty_draft_still_fails_check_and_redrafts_once(tmp_path):
+    case, _, good = drafts(tmp_path)
+    empty = dict(good, status='ready', nodes={})
+    report = await runner.run_case(7, tmp_path / 'trial', tmp_path / 'library', replies=[
+        runner.requirements(case), empty, empty])
+    assert report['spec_valid'] == 'fail'
+    assert report['calls']['attempted'] == 3
+    assert report['draft_retry'] == dict(requested=True, attempted=1, succeeded=1, check_passed=False)
+    assert any('nodes: expected a non-empty object' in error['message'] for error in report['errors'])
+    assert not list((tmp_path / 'trial/cases/7/drafts').glob('*'))

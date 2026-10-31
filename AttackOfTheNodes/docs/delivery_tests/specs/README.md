@@ -200,6 +200,12 @@ are normal run framing. Blank or whitespace-only Text Output labels now produce
 bare text; set labels retain their literal prefix. This runtime change applies
 to logs, downstream payloads, legacy Vault writes and the configuration preview.
 
+A first draft with `status: blocked` stops before Check workflow spec and uses
+the existing Needs review output route to show its `reason` and
+`blocked_requirements`. It makes no redraft call, saves no workflow and offers
+no build command. Ready drafts (including empty `nodes`) and drafts without a
+status still go through the structural check and its one repair attempt.
+
 After the first Check workflow spec failure, v2 sends one structural repair
 request containing the original drafting brief, rejected raw draft and exact
 structured check error. The corrected raw draft replaces `draft_text` and goes

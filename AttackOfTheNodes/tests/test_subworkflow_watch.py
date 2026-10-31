@@ -69,7 +69,8 @@ def test_open_a_waiting_subworkflow_see_who_asks_and_go_back():
     async def steps(app, screen, pilot, master, ids):
         await master.start_workflow()
         await until(lambda: any(call.waiting for call in app.child_runs.calls.values()))
-        await until(lambda: isinstance(app.screen, UserInputScreen))
+        # push_screen makes the screen current before its children finish mounting.
+        await until(lambda: isinstance(app.screen, UserInputScreen) and app.screen.is_mounted)
         prompt = app.screen
         asked = (str(prompt.query_one(".modal-title").render()), str(prompt.query_one("#user-input-from").render()))
         branch_id = prompt.branch_id
