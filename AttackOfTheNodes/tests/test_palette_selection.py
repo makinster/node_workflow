@@ -7,6 +7,7 @@ import pytest
 
 from backend import node_catalogue
 from backend import palette_selection as selection
+from backend.authoring import check_workflow_spec
 from backend.node_errors import NodeError
 from backend.node_factory import NodeFactory
 from tests.test_meta_nodes import runner as node_runner
@@ -37,7 +38,7 @@ async def test_exact_identity_complete_sorted_and_capped():
 @pytest.mark.parametrize('ids, message', [
     ([], 'list'), (['start'], 'Unknown'), (['start_node '], 'Unknown'),
     (['end_node', 'end_node'], 'Duplicate'), (['tombstone_node'], 'Hidden'),
-    (['merge_node'], 'Not admitted'), ('start_node', 'list'), ([None], 'Unknown'),
+    (['wait_until_node'], 'Not admitted'), ('start_node', 'list'), ([None], 'Unknown'),
     (['start_node'] * 65, 'list'),
 ])
 def test_exact_rejects_bad_identities(ids, message):
@@ -88,8 +89,11 @@ async def test_support_closure_is_small_and_role_driven():
         receipt = selection.read_snapshot(await selection.snapshot(NodeFactory(), a, 'role '+role, config()))
         assert receipt['selected_type_ids'] == sorted({'start_node', 'end_node', kind})
     a['selection'] = dict(candidates=[], roles=[dict(role='join', requirement_ids=['r1'], reason='Wait for all paths')])
+    receipt = selection.read_snapshot(await selection.snapshot(NodeFactory(), a, 'Join both completed paths', config()))
+    assert 'merge_node' in receipt['selected_type_ids'] and receipt['draft_stage'] == 1
     with pytest.raises(NodeError) as exc:
-        await selection.snapshot(NodeFactory(), a, 'Join both completed paths', config())
+        await selection.snapshot(NodeFactory(), a, 'Join both completed paths',
+                                 config(admitted_type_ids=sorted(selection.HELPER_PALETTE)))
     assert exc.value.details['status'] == 'not_admitted' and 'merge_node' in exc.value.details['not_admitted']
 
 
@@ -137,7 +141,10 @@ async def test_unknown_composition_stops_once_before_drafting():
 async def test_draft_subset_and_stale_snapshot_are_mechanical():
     factory = NodeFactory()
     text = await selection.snapshot(factory, analysis_for(1), 'Show Ready', config())
-    selection.check_draft(factory, good_draft(1), text)
+    flow = check_workflow_spec(factory, good_draft(1))['flow_analysis']
+    selection.check_draft(factory, good_draft(1), text, flow=flow)
+    with pytest.raises(NodeError, match='flow analysis'):
+        selection.check_draft(factory, good_draft(1), text)
     with pytest.raises(NodeError, match='unselected'):
         selection.check_draft(factory, good_draft(5), text)
     with pytest.raises(NodeError, match='stale'):
@@ -217,7 +224,7 @@ async def test_gate_rejects_unselected_type_then_only_one_retry(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('case_set, expected_calls', [(1, 91), (2, 87)])
+@pytest.mark.parametrize('case_set, expected_calls', [(1, 95), (2, 91)])
 async def test_twenty_frozen_cases_recall_and_no_extra_ordinary_call(tmp_path, case_set, expected_calls):
     (tmp_path/'trial').mkdir()
     report = await runner.batch(tmp_path/'trial', case_set=case_set)

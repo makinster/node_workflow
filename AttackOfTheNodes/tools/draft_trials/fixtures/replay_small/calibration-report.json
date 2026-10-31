@@ -1140,6 +1140,82 @@
         ],
         "summary": "Canned review; not inference evidence"
       }
+    },
+    {
+      "fixture": "collect_vs_pick_one",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "collect_vs_pick_one",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "join_vs_shared_end",
+      "variant": "good",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "pass",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": true
+          }
+        ],
+        "remarks": [],
+        "problems": [],
+        "summary": "Canned review; not inference evidence"
+      }
+    },
+    {
+      "fixture": "join_vs_shared_end",
+      "variant": "bad",
+      "result": "pass",
+      "judge_reply": {
+        "verdict": "fail",
+        "coverage": [
+          {
+            "requirement_id": "r1",
+            "evidence": "start -> show; complete configured draft edges and case oracle checked independently",
+            "met": false
+          }
+        ],
+        "remarks": [],
+        "problems": [
+          "Canned review problem"
+        ],
+        "summary": "Canned review; not inference evidence"
+      }
     }
   ]
 }

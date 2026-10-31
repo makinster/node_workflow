@@ -1,4 +1,4 @@
-"""Final flow record/schema/provenance exports without palette admission."""
+"""Final flow record/schema/provenance exports; Stage 1 admits Merge alone."""
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -33,7 +33,7 @@ def test_final_membership_preserves_state_nodes_beacon_and_admission():
     for kind in ['set_variable_node','get_variable_node']:
         assert kind in PENDING_REVIEW and kind not in DEV_TEST_ONLY
     assert 'branch_end_node' not in DEV_TEST_ONLY and 'branch_end_node' not in ADMITTED
-    assert not {'merge_node','wait_until_node'} & ADMITTED
+    assert 'merge_node' in ADMITTED and 'wait_until_node' not in ADMITTED
 
 
 @pytest.mark.parametrize('kind',sorted(FLOW_RECORD_TYPES))

@@ -1,0 +1,39 @@
+{
+  "base_revision": "821688d",
+  "real_api_calls": 0,
+  "admission_versions": {"admission": 2, "role_schema": 2, "contracts": 2, "cache": 2, "draft_stage": 1},
+  "caps": {"contracts": 50000, "context": 100000, "full_catalogue": 64000, "reply": 8000},
+  "contracts": {
+    "original_11": {"Brief": 6695, "Compact": 18439},
+    "helpers_15": {"Brief": 8855, "Compact": 27536},
+    "stage_1_16": {"Brief": 9707, "Compact": 30391},
+    "full_catalogue": {"Brief": 15736, "Compact": 56704}
+  },
+  "prompts": {
+    "analysis_question": {"stage_1": 4915, "frozen": 4669},
+    "resolve_question": {"stage_1": 4726, "frozen": 4480},
+    "draft_question": {"stage_1": 2312, "frozen": 1762},
+    "retry_question": {"stage_1": 463, "frozen": 463},
+    "judge_question": {"stage_1": 2883, "frozen": 2883}
+  },
+  "added_text": {"analysis": 234, "draft": 538},
+  "selected_snapshots": [
+    {"case": "F2-01", "total_characters": 13830, "contracts_characters": 12556,
+     "type_ids": ["branch_node", "end_node", "file_reader_node", "merge_node", "start_node", "text_output_node"]},
+    {"case": "F2-02", "total_characters": 14944, "contracts_characters": 13536,
+     "type_ids": ["branch_node", "end_node", "file_reader_node", "json_path_node", "merge_node", "start_node", "text_output_node"]}
+  ],
+  "largest_mock_call_characters": {
+    "F2-01": {"analysis": 16124, "draft": 17766, "judge": 26426},
+    "F2-02": {"analysis": 16319, "draft": 19470, "judge": 31195}
+  },
+  "f2_02_spec_check_characters": {"whole": 9620, "flow_analysis": 9382},
+  "replay_000046": {
+    "main": {"set_1": "10/10", "set_2": "10/10", "set_3": "3/4", "calibration": {"same_outcome": 60, "diverged": 0}},
+    "this_branch": {"set_1": "10/10", "set_2": "10/10", "set_3": "3/4", "set_4": {"fully_right": 0, "diverged": 2},
+                    "calibration": {"same_outcome": 60, "diverged": 4}},
+    "saved_drafts_identical_after_root_normalised": 21
+  },
+  "engine_stage_1": {"result": "pass", "start_attempts": 60, "request_and_pair_runs_finished": 54, "control_runs": 6},
+  "mock_all_sets": {"result": "pass", "fully_right": {"1": 10, "2": 10, "3": 4, "4": 2}, "fixture_runs": 65, "mock_calls": 140}
+}

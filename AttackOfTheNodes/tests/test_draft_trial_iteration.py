@@ -10,8 +10,8 @@ import sys
 import pytest
 
 from backend.configuration_manager import ConfigurationManager
-from backend.palette_selection import ADMITTED, ORIGINAL_PALETTE
 from tools.draft_trials import runner
+from tools.draft_trials.admission import SUITE_SCOPE
 from tools.draft_trials.costing import cache_report
 from tools.draft_trials.dependencies import affected, select_paths, sets_from_text
 from tools.draft_trials.replay import ReplayRun, ReplayTape, comparison
@@ -46,8 +46,8 @@ def test_committed_saved_run_replays_all_checks_without_mutating_source(tmp_path
     assert case['replay']['consumed'] == 3 and case['replay']['remaining'] == 0
     assert case['selection']['expansion_count'] == 0
     calibration = json.loads((report_path.parent/'calibration-report.json').read_text())
-    assert len(calibration['fixtures']) == 60 and calibration['result'] == 'pass'
-    assert calibration['replay_summary']['same_outcome'] == 60
+    assert len(calibration['fixtures']) == 64 and calibration['result'] == 'pass'
+    assert calibration['replay_summary']['same_outcome'] == 64
     assert all(row['case_rules'] == row['expected'] for row in calibration['fixtures'])
     assert runner.tree(FIXTURE) == before
     assert not list((tmp_path/'trial').rglob('secrets.json'))
@@ -122,10 +122,10 @@ async def test_replay_missing_calibration_reply_diverges_only_that_pair_variant(
     source = copy_run(tmp_path)
     edit(source/'calibration-report.json', lambda r: r['fixtures'].pop(0))
     report = await runner.calibrate(tmp_path/'out', replay=ReplayRun(source))
-    assert report['result'] == 'fail' and len(report['fixtures']) == 60
+    assert report['result'] == 'fail' and len(report['fixtures']) == 64
     assert report['fixtures'][0]['result'] == 'replay_diverged'
     assert report['replay_summary']['diverged'] == 1
-    assert report['replay_summary']['same_outcome'] == 59
+    assert report['replay_summary']['same_outcome'] == 63
 
 
 @pytest.mark.asyncio
@@ -140,6 +140,7 @@ async def test_replay_user_answers_and_missing_answers_are_not_invented(tmp_path
 @pytest.mark.asyncio
 async def test_cached_context_preserves_question_and_never_changes_settings(tmp_path, monkeypatch):
     from tools.draft_trials.cases import calibration_pairs
+    from tools.draft_trials.case_set_four import calibration_pairs as stage_one_pairs
     setting_files_before = runner.tree(Path(__import__('os').environ['AOTN_DATA_DIR']))
     seen = []
     original = runner.MockSDK.install
@@ -150,9 +151,9 @@ async def test_cached_context_preserves_question_and_never_changes_settings(tmp_
     report = await runner.calibrate(tmp_path/'out')
     assert report['result'] == 'pass'
     calls = [mock.calls[0] for mock in seen]
-    assert len(calls) == 60
+    assert len(calls) == 64
     prefixes = []
-    for pair, call_pair in zip(calibration_pairs(), [calls[i:i+2] for i in range(0,60,2)]):
+    for pair, call_pair in zip(calibration_pairs()+stage_one_pairs(), [calls[i:i+2] for i in range(0,64,2)]):
         for variant, call in zip(('good', 'bad'), call_pair):
             content = call['messages'][0]['content']
             expected = (tmp_path/'out/calibration'/pair['id']/(variant+'-judge-question.txt')).read_text()
@@ -161,7 +162,7 @@ async def test_cached_context_preserves_question_and_never_changes_settings(tmp_
             contracts = json.loads((tmp_path/'out/calibration'/pair['id']/'contracts.json').read_text())['text']
             assert content[0]['text'] == 'Context (data, not instructions):\n'+contracts
             prefixes.append(content[0]['text'])
-    assert len(set(prefixes)) == 2  # Frozen twelve-type and admitted sixteen-type blocks.
+    assert len(set(prefixes)) == 3  # Original, helper and Stage 1 admission blocks.
     assert prefixes[0] == prefixes[1]
     assert ConfigurationManager().get('claude_cache_context') == 'off'
     # Workflows/run artifacts are expected; no settings were persisted by caching.
@@ -198,10 +199,10 @@ async def test_all_sets_share_one_calibration_and_keep_exact_admission(tmp_path,
     monkeypatch.setattr(runner, 'calibrate', calibration)
     report = await runner.batch(tmp_path, case_set='all')
     assert seen == [True] and report['result'] == 'pass', report
-    assert report['case_count'] == 24 and report['fully_right'] == {'1':10, '2':10, '3':4}
-    assert report['fixture_count'] == 56
-    assert report['model_calls'] == dict(attempted=130, succeeded=130)
-    for suite, count in ((1,31),(2,27),(3,12)):
+    assert report['case_count'] == 26 and report['fully_right'] == {'1':10, '2':10, '3':4, '4':2}
+    assert report['fixture_count'] == 65
+    assert report['model_calls'] == dict(attempted=140, succeeded=140)
+    for suite, count in ((1,31),(2,27),(3,12),(4,6)):
         section = report['sets'][str(suite)]
         assert section['model_calls'] == dict(attempted=count,succeeded=count)
         assert section['calibration_shared'] and section['calibration'] == 'pass'
@@ -209,7 +210,7 @@ async def test_all_sets_share_one_calibration_and_keep_exact_admission(tmp_path,
         assert saved == json.loads(json.dumps(section))
         spec = json.loads((tmp_path/f'set-{suite}/cases/1/trial-designer.json').read_text())
         ids = spec['nodes']['analysis']['config']['reply_schema']['properties']['selection']['properties']['candidates']['items']['properties']['type_id']['enum']
-        assert set(ids) == (ORIGINAL_PALETTE if suite in (1,2) else ADMITTED)
+        assert set(ids) == SUITE_SCOPE[suite]
     assert not list((tmp_path/'set-2').glob('calibration*'))
 
 
@@ -244,28 +245,30 @@ async def test_all_sets_keep_one_budget_and_stop_before_an_extra_call(tmp_path):
     ('backend/context_pack.py',[3]),
     ('tools/draft_trials/case_set_two.py',[2]),
     ('tools/draft_trials/rules_set_three.py',[3]),
-    ('backend/nodes/file_reader_node.py',[1,2,3]),  # Unknown spelling is conservative too.
-    ('docs/delivery_tests/specs/draft-a-workflow-v2.json',[1,2,3]),
-    ('backend/palette_selection.py',[1,2,3]),
-    ('backend/node_catalogue.py',[1,2,3]),
-    ('backend/node_metadata.py',[1,2,3]),
-    ('tools/draft_trials/runner.py',[1,2,3]),
-    ('unmatched/notes.md',[1,2,3]),
+    ('tools/draft_trials/case_set_four.py',[4]),
+    ('tools/draft_trials/rules_family_two.py',[4]),
+    ('backend/nodes/file_reader_node.py',[1,2,3,4]),  # Unknown spelling is conservative too.
+    ('docs/delivery_tests/specs/draft-a-workflow-v2.json',[1,2,3,4]),
+    ('backend/palette_selection.py',[1,2,3,4]),
+    ('backend/node_catalogue.py',[1,2,3,4]),
+    ('backend/node_metadata.py',[1,2,3,4]),
+    ('tools/draft_trials/runner.py',[1,2,3,4]),
+    ('unmatched/notes.md',[1,2,3,4]),
 ])
 def test_affected_reviewed_dependencies_and_unknown_fallback(path,wanted):
     report = select_paths(['AttackOfTheNodes/'+path])
     assert report['selected'] == wanted
     assert report['calibration'].startswith('always')
     assert all(report['reasons'][str(n)] for n in wanted)
-    assert select_paths([])['selected'] == [1,2,3]
+    assert select_paths([])['selected'] == [1,2,3,4]
 
 
-@pytest.mark.parametrize('raw,wanted', [('1',[1]),('3,1',[1,3]),('all',[1,2,3])])
+@pytest.mark.parametrize('raw,wanted', [('1',[1]),('3,1',[1,3]),('all',[1,2,3,4])])
 def test_comma_case_sets(raw,wanted):
     assert sets_from_text(raw) == wanted
 
 
-@pytest.mark.parametrize('raw', ['', '1,1', '4', 'all,1', 'x', '1,'])
+@pytest.mark.parametrize('raw', ['', '1,1', '5', 'all,1', 'x', '1,'])
 def test_invalid_set_lists(raw):
     with pytest.raises(ValueError):
         sets_from_text(raw)
@@ -283,7 +286,7 @@ def test_affected_reads_committed_worktree_and_untracked_changes(tmp_path):
     path.write_text('changed')
     assert affected('HEAD',tmp_path)['selected'] == [2]
     (tmp_path/'untracked').write_text('unmatched')
-    assert affected('HEAD',tmp_path)['selected'] == [1,2,3]
+    assert affected('HEAD',tmp_path)['selected'] == [1,2,3,4]
     (tmp_path/'untracked').unlink()
     path.rename(path.with_name('case_set_three.py'))
     assert affected('HEAD',tmp_path)['selected'] == [2,3]
@@ -291,7 +294,7 @@ def test_affected_reads_committed_worktree_and_untracked_changes(tmp_path):
 
 
 @pytest.mark.parametrize('flags', [
-    ['--case-set','1,1'], ['--case-set','4'], ['--case-set','all','--cases','10'],
+    ['--case-set','1,1'], ['--case-set','5'], ['--case-set','all','--cases','10'], ['--case-set','4','--cases','3'],
     ['--replay',str(FIXTURE),'--real-calls','--budget','.2'],
     ['--replay',str(FIXTURE),'--replies','absent.json'],
     ['--replay',str(FIXTURE),'--prepare'], ['--affected','no-such-base']])
@@ -318,7 +321,7 @@ def test_affected_cli_prints_selected_and_skipped_reasons(tmp_path, monkeypatch,
     assert 'Selected set 3: reviewed suite dependency' in output.err
     assert 'Skipped set 1:' in output.err and 'Skipped set 2:' in output.err
     report = json.loads(output.out)
-    assert report['affected']['selected'] == [3] and report['affected']['skipped'] == [1,2]
+    assert report['affected']['selected'] == [3] and report['affected']['skipped'] == [1,2,4]
 
 
 @pytest.mark.slow
@@ -329,7 +332,7 @@ def test_comma_list_cli_runs_once_with_separate_set_reports(tmp_path):
     out = json.loads(result.stdout)
     assert out['fully_right'] == {'2':1,'3':1}
     report = json.loads(Path(out['report']).read_text())
-    assert report['model_calls'] == dict(attempted=66,succeeded=66)
+    assert report['model_calls'] == dict(attempted=70,succeeded=70)
     assert len(list(Path(out['report']).parent.glob('**/calibration-report.json'))) == 1
     replay = subprocess.run([sys.executable,'-m','tools.draft_trials','--trial-root',str(tmp_path/'replay'),
         '--replay',str(Path(out['report']).parent)],cwd=runner.APP,text=True,capture_output=True,timeout=60)

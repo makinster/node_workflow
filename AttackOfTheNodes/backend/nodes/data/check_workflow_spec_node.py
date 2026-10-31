@@ -48,7 +48,8 @@ class CheckWorkflowSpecNode(Node):
                                         fail_on_disabled_output=self.config.get('fail_on_disabled_output', False))
             if self.config.get('contract_snapshot_vault_key'):
                 from ...palette_selection import check_draft
-                receipt = check_draft(NodeFactory(), value, context.memory_bank.read_persistent(self.config['contract_snapshot_vault_key']))
+                receipt = check_draft(NodeFactory(), value, context.memory_bank.read_persistent(self.config['contract_snapshot_vault_key']),
+                                      flow=report.get('flow_analysis'))
                 report['selection_sha256'] = receipt['contracts_sha256']
             publish(self.config, context, value, 'var', report)
         except NodeError as exc:

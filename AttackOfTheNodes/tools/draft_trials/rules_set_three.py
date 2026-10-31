@@ -12,7 +12,7 @@ from backend.authoring import check_workflow_spec
 from backend.node_factory import NodeFactory
 from .cases import fixture_variants
 from .rules import NeedsReview, RuleFailure, effective_nodes, safe_path, allows_display_framing, display_outputs_match
-from backend.palette_selection import ADMITTED
+from backend.palette_selection import HELPER_PALETTE
 
 # Sequential local nodes execute directly. Parallel scheduling needs the real
 # coordinator; file writes are forbidden by these read-only case outcomes.
@@ -31,7 +31,7 @@ def safety(spec, case):
     unsupported = []
     for n in nodes.values():
         t, c = (n['type'], n['config'])
-        if t not in ADMITTED:
+        if t not in HELPER_PALETTE:
             raise RuleFailure('outside admitted palette')
         if t not in LOCAL_EXECUTABLE:
             unsupported.append(t + ' needs execution review beyond this local probe.')

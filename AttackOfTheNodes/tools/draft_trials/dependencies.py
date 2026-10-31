@@ -10,7 +10,9 @@ import subprocess
 
 from .cases import case_record, good_draft
 
-ALL = (1, 2, 3)
+ALL = (1, 2, 3, 4)
+# Normal-run cases per suite. Set 4's other requests are Stage 2: opt-in offline.
+CASE_COUNTS = {1: 10, 2: 10, 3: 4, 4: 2}
 APP = Path(__file__).resolve().parents[2]
 # These files own only the corresponding versioned suite/oracle. Shared cases.py
 # supplies common graph helpers and dispatch, so it is deliberately not narrow.
@@ -19,6 +21,12 @@ SET_PATHS = {
     'tools/draft_trials/case_set_three.py': 3,
     'tools/draft_trials/rules_set_three.py': 3,
     'tests/test_case_set_two.py': 2,
+    'tools/draft_trials/case_set_four.py': 4,
+    'tools/draft_trials/rules_family_two.py': 4,
+    'tools/draft_trials/family_two.py': 4,
+    'tools/draft_trials/family_two_engine.py': 4,
+    'tools/draft_trials/family_two_controls.py': 4,
+    'tests/test_family_two_trials.py': 4,
 }
 SHARED_PREFIXES = ('docs/delivery_tests/specs/', 'backend/node_metadata',
                    'backend/palette_selection', 'backend/node_catalogue',
@@ -32,9 +40,9 @@ def sets_from_text(raw):
     try:
         values = [int(v) for v in raw.split(',')]
     except (ValueError, AttributeError):
-        raise ValueError('--case-set must be all or a comma list of 1,2,3') from None
+        raise ValueError('--case-set must be all or a comma list of 1,2,3,4') from None
     if not values or len(set(values)) != len(values) or any(v not in ALL for v in values):
-        raise ValueError('--case-set must contain distinct sets from 1,2,3')
+        raise ValueError('--case-set must contain distinct sets from 1,2,3,4')
     return sorted(values)
 
 
@@ -42,7 +50,7 @@ def dependency_index():
     reviews = json.loads((APP/'backend/node_metadata_review.json').read_text())['reviews']
     paths = {}
     for suite in ALL:
-        for number in range(1, 5 if suite == 3 else 11):
+        for number in range(1, CASE_COUNTS[suite]+1):
             case = case_record(number, '/dependency-index', suite)
             tags = case.get('dependencies', {})
             types = set(tags.get('used_types', [])) | set(tags.get('candidate_alternatives', []))

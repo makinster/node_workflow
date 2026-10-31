@@ -1,7 +1,8 @@
-"""Unadmitted Family 2 scorer. Shared graph proof; independent event/value model.
+"""Family 2 scorer. Shared graph proof; independent event/value model.
 
-Only explicit offline callers reach this module. No runtime collector or node
-execute methods are used by the logical scheduler. Two orders are not exhaustive.
+Stage 1 cases run in the normal trials; Stage 2 needs an explicit offline caller.
+No runtime collector or node execute methods are used by the logical scheduler.
+Two orders are not exhaustive.
 """
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -14,10 +15,11 @@ from string import Formatter
 from backend.flow_behaviors import Kind, analyze_flow, port_order
 from backend.node_factory import NodeFactory
 from backend.output_entry import text_output_prefix
+from backend.palette_selection import stage_one_problems
 from .rules import NeedsReview, RuleFailure, safe_path, effective_nodes
 from .case_set_four import fixture_variants
 
-POLICY_VERSION = 'family-2-evaluator-1'
+POLICY_VERSION = 'family-2-evaluator-2'
 LOCAL_TYPES = frozenset('start_node end_node branch_node merge_node wait_until_node file_reader_node json_path_node concat_node text_output_node text_transform_node conditional_node context_pack_node'.split())
 
 
@@ -47,8 +49,12 @@ def safety(spec, case):
     analysis=analyze_flow(graph_nodes(spec),NodeFactory(),draft=True)
     if not analysis.success:
         raise RuleFailure('; '.join(f.code+': '+f.message for f in analysis.findings if f.level=='error'))
-    if case['required_stage']>case.get('evaluation_stage',1) or (case.get('evaluation_stage',1)==1 and analysis.admission_stage>1):
-        raise RuleFailure('outside this admission stage (evaluation only; no admission granted)')
+    if case['required_stage']>case.get('evaluation_stage',1):
+        raise RuleFailure('outside this admission stage: this request needs Stage 2')
+    if case.get('evaluation_stage',1)==1:
+        problems=stage_one_problems(analysis.to_dict())
+        if problems:
+            raise RuleFailure('; '.join(problems))
     outgoing={}
     for edge in spec['connections']:
         if edge['from'] in outgoing:
@@ -75,8 +81,6 @@ def safety(spec, case):
             safe_path(c['file_path'],case['root'])
         if t=='context_pack_node' and (c.get('include_run') or c.get('include_errors')):
             raise NeedsReview('run-dependent Context Pack needs review')
-    if case.get('evaluation_stage',1)==1 and any(m.independent_ends for m in analysis.merges.values()):
-        raise RuleFailure('outside this admission stage: Stage 1 joins every path')
     from backend.authoring import check_workflow_spec
     structural=check_workflow_spec(NodeFactory(),spec)
     if not structural['ok']:
@@ -496,6 +500,20 @@ def semantics(result,case,variant):
     return True
 
 
+def shown_fields_match(bodies,variant):
+    """Target-run check beside semantics(): real Show bodies, same label freedom."""
+    if len(bodies)!=len(variant['outputs']) or bodies[:-1]!=variant['outputs'][:-1]:
+        return False
+    position=0
+    for expected in variant['fields']:
+        label=re.escape(expected['label'])
+        found=re.compile(r'(?:\b'+label+r'\s*:\s*|\['+label+r'\]\s*(?:\|\s*)?)'+re.escape(str(expected['value']))+r'(?=\W|$)',re.I).search(bodies[-1],position)
+        if found is None:
+            return False
+        position=found.end()
+    return True
+
+
 def check_rules(spec,case):
     rows=[]
     try:
@@ -513,4 +531,4 @@ def check_rules(spec,case):
     except (RuleFailure,KeyError,ValueError,TypeError) as exc:
         rows.append(dict(id='4.safety',result='fail',evidence=str(exc)))
     verdict='fail' if any(r['result']=='fail' for r in rows) else 'needs_review' if any(r['result']=='needs_review' for r in rows) else 'pass'
-    return dict(result=verdict,rules=rows,admitted=False,evaluation_stage=case.get('evaluation_stage',1),policy_version=POLICY_VERSION)
+    return dict(result=verdict,rules=rows,admitted=case['admitted'],evaluation_stage=case.get('evaluation_stage',1),policy_version=POLICY_VERSION)

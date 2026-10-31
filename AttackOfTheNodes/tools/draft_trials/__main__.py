@@ -62,7 +62,7 @@ def main():
     )
     parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
     parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
-    parser.add_argument("--case-set", default=None, help='1,2,3, a comma list, or all (default 1; replay infers saved sets)')
+    parser.add_argument("--case-set", default=None, help='1,2,3,4, a comma list, or all (default 1; replay infers saved sets)')
     parser.add_argument('--replay', type=Path, help='Mock-only replay of a saved run directory')
     parser.add_argument('--affected', metavar='GIT_BASE', help='Select sets from changed paths; unknown impact selects all')
     parser.add_argument("--cases", default=None)
@@ -86,7 +86,7 @@ def main():
     replay = None
     selection = None
     try:
-        from .dependencies import affected, sets_from_text
+        from .dependencies import ALL, CASE_COUNTS, affected, sets_from_text
         if args.replay:
             from .replay import ReplayRun
             source = checked_root(args.replay.expanduser())
@@ -98,12 +98,12 @@ def main():
             # Explicit choices add coverage; they never exclude an affected set.
             sets = sorted(set(selection['selected']) | (set(sets) if args.case_set else set()))
             selection['selected'] = sets
-            selection['skipped'] = [n for n in (1, 2, 3) if n not in sets]
+            selection['skipped'] = [n for n in ALL if n not in sets]
             for n in sets:
                 if not selection['reasons'][str(n)]:
                     selection['reasons'][str(n)].append(dict(path=None, reason='explicit --case-set'))
         args.case_set = sets[0] if len(sets) == 1 else sets
-        count = min(4 if n == 3 else 10 for n in sets)
+        count = min(CASE_COUNTS[n] for n in sets)
         ids = [int(value) for value in args.cases.split(',')] if args.cases else None
         if ids is not None and (len(set(ids)) != len(ids) or any(n not in range(1,count+1) for n in ids)):
             raise ValueError(f'--cases must contain distinct ids from 1 through {count} for every selected set')

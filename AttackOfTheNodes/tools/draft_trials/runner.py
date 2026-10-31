@@ -656,13 +656,14 @@ async def target_fixtures(spec, case, directory):
         expected_prompts = list(zip(symbolic["prompts"], variant["answers"]))
         run, vault = await run_workflow(
             trial, expected_prompts, directory / (variant["name"] + ".json"),
-            system_node_folders=root if case.get("case_set")==3 else None
+            system_node_folders=root if case.get("case_set") in (3, 4) else None
         )
         # Classify by emitter, never by text: bare content may start with
         # [END] or another node's label. Persist handles before JSON loses
         # OutputLogEntry attributes.
         from backend.output_entry import text_output_prefix
         from .rules import allows_display_framing, display_outputs_match
+        from .rules_family_two import shown_fields_match
 
         bodies, completion_noise = [], []
         for record in run['output_records']:
@@ -697,9 +698,9 @@ async def target_fixtures(spec, case, directory):
             (bool(run["errors"]) == variant["error"]
              if case.get('case_set')!=3 else
              [e['code'] for e in run['errors']]==variant['handled_errors'] and run['exit_code']==0)
-            and display_outputs_match(
+            and (shown_fields_match(bodies, variant) if case.get('case_set') == 4 else display_outputs_match(
                 [{"body": body} for body in bodies], expected, allows_display_framing(case)
-            )
+            ))
             and preserved
             and content_ok
         )
@@ -742,9 +743,8 @@ async def run_case(
         directory / "frozen-case.json", dict(case, fixtures=variants)
     )
     spec = json.loads(SPEC.read_text())
-    from .admission import configure
-    from backend.palette_selection import ADMITTED, ORIGINAL_PALETTE
-    configure(spec, ORIGINAL_PALETTE if case_set in (1,2) else ADMITTED)
+    from .admission import SUITE_SCOPE, configure
+    configure(spec, SUITE_SCOPE[case_set])
     spec["name"] += f' set {case_set} case {number} trial {sha(str(directory))[:10]}'
     spec["nodes"]["judge"]["config"].update(model=judge_model, effort=judge_effort)
     drafts = directory / "drafts"
@@ -1059,6 +1059,12 @@ async def contract_inventory():
     return text, inventory
 
 
+def current_calibration_pairs():
+    # The frozen thirty stay byte-for-byte; Stage 1 pairs follow them.
+    from .case_set_four import calibration_pairs as family_two_pairs
+    return json.loads((Path(__file__).parent / "fixtures/calibration.json").read_text()) + family_two_pairs()
+
+
 async def calibrate(
     trial_root, real_calls=False, judge_replies=None, *,
     judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0], replay=None,
@@ -1086,9 +1092,8 @@ async def calibrate(
             text=contracts,
         ),
     )
-    pairs = json.loads(
-        (Path(__file__).parent / "fixtures/calibration.json").read_text()
-    )
+    from .admission import SUITE_SCOPE
+    pairs = current_calibration_pairs()
     rows = []
     mock_replies = iter(judge_replies) if judge_replies is not None else None
     failure = None
@@ -1099,11 +1104,10 @@ async def calibrate(
             case = case_record(pair["case"], directory / "fixtures", family_set)
             prepare_files(Path(case["root"]), fixture_variants(pair["case"],family_set)[0])
             pair_contracts=contracts
-            if family_set==3:
+            if family_set in (3,4):
                 from backend import node_catalogue
-                from backend.palette_selection import ADMITTED
                 defaults=factory.create_config_template('node_catalogue_node')
-                pair_contracts=await node_catalogue.build(factory,dict(defaults,scope='Exact IDs',type_ids=sorted(ADMITTED),max_chars=50000))
+                pair_contracts=await node_catalogue.build(factory,dict(defaults,scope='Exact IDs',type_ids=sorted(SUITE_SCOPE[family_set]),max_chars=50000))
             write_json(directory/'contracts.json', dict(text=pair_contracts, characters=len(pair_contracts), sha256=sha(pair_contracts)))
             for variant in ("good", "bad"):
                 target = json.loads(json.dumps(pair[variant]).replace("ROOT", case["root"]))
@@ -1461,10 +1465,10 @@ async def batch(
     global _budget, _shared_library
     previous = _budget, _shared_library
     try:
-        from .dependencies import sets_from_text
+        from .dependencies import ALL, CASE_COUNTS, sets_from_text
         sets = sets_from_text(case_set) if isinstance(case_set, str) else sorted(case_set) if isinstance(case_set, (list, tuple)) else [case_set]
-        if not sets or len(sets) != len(set(sets)) or any(n not in (1, 2, 3) for n in sets):
-            raise ValueError('case_set must contain distinct sets from 1,2,3')
+        if not sets or len(sets) != len(set(sets)) or any(n not in ALL for n in sets):
+            raise ValueError('case_set must contain distinct sets from 1,2,3,4')
         if replay is not None:
             if real_calls or replies_file:
                 raise ValueError('Replay is mock-only and cannot be combined with --replies')
@@ -1479,8 +1483,8 @@ async def batch(
         _shared_library = Path(shared_library) if real_calls else None
         requested_ids = list(case_ids) if case_ids is not None else None
         def ids_for(n):
-            ids = list(requested_ids) if requested_ids is not None else ((replay.case_ids(n) if replay is not None else []) or list(range(1,5 if n==3 else 11)))
-            if len(ids) != len(set(ids)) or any(type(i) is not int or i not in range(1,5 if n==3 else 11) for i in ids):
+            ids = list(requested_ids) if requested_ids is not None else ((replay.case_ids(n) if replay is not None else []) or list(range(1,CASE_COUNTS[n]+1)))
+            if len(ids) != len(set(ids)) or any(type(i) is not int or i not in range(1,CASE_COUNTS[n]+1) for i in ids):
                 raise ValueError('Invalid case IDs for selected set')
             return ids
         ids = {n: ids_for(n) for n in sets}

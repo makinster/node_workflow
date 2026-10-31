@@ -5,7 +5,6 @@ import sys
 
 import pytest
 from tools.draft_trials import __main__ as cli, runner
-from tools.draft_trials.cases import calibration_pairs
 from tools.draft_trials.containment import preparation_record
 
 
@@ -102,7 +101,7 @@ def test_prepared_real_calibrate_only_with_mock_sdk(tmp_path, monkeypatch, all_f
     original = runner.batch
     mock = runner.MockSDK([
         runner.meaning("fail" if all_fail else verdict)
-        for _ in calibration_pairs() for verdict in ("pass", "fail")
+        for _ in runner.current_calibration_pairs() for verdict in ("pass", "fail")
     ])
 
     async def mocked_batch(*args, **kwargs):
@@ -122,13 +121,13 @@ def test_prepared_real_calibrate_only_with_mock_sdk(tmp_path, monkeypatch, all_f
     for record in (report, calibration):
         assert record["judge_model"] == "claude-sonnet-5-5"
         assert record["judge_effort"] == "high"
-        assert record["model_calls"] == {"attempted": 60, "succeeded": 60}
+        assert record["model_calls"] == {"attempted": 64, "succeeded": 64}
         assert record["estimated_cost_usd"] > 0
     assert report["estimated_cost_usd"] == pytest.approx(calibration["estimated_cost_usd"])
     assert report["case_count"] == 0 and report["cases"] == []
     assert not (run / "cases").exists()
     assert not list((root / "library").iterdir())
-    assert not mock.replies and len(mock.calls) == 60
+    assert not mock.replies and len(mock.calls) == 64
     for row, call in zip(calibration["fixtures"], mock.calls):
         question = run / "calibration" / row["fixture"] / (row["variant"] + "-judge-question.txt")
         contracts = json.loads((run / "calibration" / row["fixture"] / "contracts.json").read_text())["text"]

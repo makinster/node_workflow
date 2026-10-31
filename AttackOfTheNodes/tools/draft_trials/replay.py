@@ -71,7 +71,7 @@ class ReplayRun:
         if not isinstance(self.report, dict):
             raise ValueError('Replay needs a saved run report object.')
         self.sections = self.report.get('sets') or {str(self.report.get('case_set', 1)): self.report}
-        if not isinstance(self.sections, dict) or not self.sections or any(str(k) not in ('1', '2', '3') for k in self.sections):
+        if not isinstance(self.sections, dict) or not self.sections or any(str(k) not in ('1', '2', '3', '4') for k in self.sections):
             raise ValueError('Replay report has no recognized case sets.')
         try:
             calibration = read(self.root/'calibration-report.json')

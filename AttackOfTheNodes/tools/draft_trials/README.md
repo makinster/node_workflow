@@ -502,7 +502,7 @@ python -m tools.draft_trials --trial-root /absolute/trial --affected origin/main
 ```
 
 `--case-set` defaults to 1 and accepts distinct comma-separated IDs or `all`
-(1,2,3). Calibration always runs once, with every current good/bad pair, before
+(1,2,3,4). Calibration always runs once, with every current good/bad pair, before
 any selected case. A multi-set run writes one root `calibration-report.json`
 and `set-<n>/report.json` for each set; the root report embeds those sections.
 `fully_right` remains per set. Per-set call/cost totals exclude shared calibration;
@@ -510,7 +510,8 @@ the invocation totals include it once. Budget, elapsed-time and unknown-cost
 guards cover the entire invocation without resetting between sets. Failed
 calibration blocks cases unless explicitly running the diagnostic override;
 even with that override, the overall result remains fail. Sets 1/2 retain the
-exact original eleven-type admission/contracts; set 3 retains its fifteen types.
+exact original eleven-type admission/contracts; set 3 retains its fifteen types;
+set 4 alone uses the sixteen-type Stage 1 admission.
 For multi-set `--replies`, use `{ "1": { "1": [replies...] }, "3": ... }`;
 single-set overrides retain the original case-ID object format.
 
@@ -594,15 +595,44 @@ its 10/10 case score. Runs 000040/000041 keep their 9/10 and 3/4 case scores.
 No judge prompt, frozen expected result, backend service or workflows/ edit.
 
 
-## Family 2 set 4 — offline evaluation only (2026-10-31)
+## Family 2 set 4 — Stage 1 admitted (2026-10-31)
 
-Set 4, Merge and Wait Until are **not admitted**. `--case-set all` still means
-1/2/3, and the ordinary harness still uses the original thirty calibration pairs.
-The separate `case_set_4.json` and `calibration_set_4.json` snapshots add five
-requests / seventeen variants and six pairs without changing that core.
+**Stage 1** is one split, every path wired directly to one Merge, with the
+collected result used by a later step. `merge_node` is admitted for that shape.
+Wait Until, Merge Beacon and Set/Get Variable are not admitted.
+
+`--case-set 4` and `--case-set all` run F2-01 and F2-02. Calibration runs the
+frozen thirty pairs byte-for-byte, then pairs 1 (`collect_vs_pick_one`) and 6
+(`join_vs_shared_end`): 32 pairs / 64 judge calls. F2-03 to F2-05 and pairs 2 to 5
+are Stage 2 and stay opt-in. `fixtures/case_set_4.json` and
+`calibration_set_4.json` hold all five requests / seventeen variants and six pairs.
+
+Sets 1, 2 and 3 keep their exact boundaries: `admission.SUITE_SCOPE` gives each
+suite its own palette, and `admission.configure` removes the Merge guidance for
+them. `admission_baseline.json`'s `stage_1` section pins the configured designer
+for those scopes against the digest of unchanged main. Their selected snapshots
+carry `draft_stage: null`, so the stage check below does not apply to them.
+
+Drafter checks (`palette_selection.check_draft`) refuse anything beyond Stage 1 with
+a plain message that says "outside this admission stage", which reaches the one
+structural redraft. `stage_one_problems` reads the flow analysis the check already
+produced; it does no graph walk of its own. It refuses a split inside a path, a
+sub-path join, two paths into one Merge input (concurrent or either-or), a choice
+or error route before Merge, Wait Until, more than one Merge or split alongside a
+Merge, a path ending before Merge and a Merge result that goes straight to End. A
+Merge with no split and control loops are already refused by the shared check. An
+independent split with no Merge stays allowed.
+
+`palette_selection.ADMISSION_VERSIONS` moves admission, role schema, contracts and
+cache together. Selected snapshots carry it and a snapshot from another version is
+stale. The role ID list did not change (`join` already existed); the type ID enum
+gained `merge_node`. Provider cache prefixes are content-addressed, so they change
+wherever the text changes. Saved replies carry no version and still replay: they
+were written against the old prompts, so replay checks how today's rules handle old
+answers, not what a model would now write.
 
 ```bash
-# Stage 1 only: F2-01/02 and pairs 1/6, with real local engine evidence.
+# F2-01/02 and pairs 1/6, with real local engine evidence.
 python -m tools.draft_trials.family_two --output /fresh/absolute/stage1
 # Explicitly verify withheld Stage 2; grants no node/role/drafter admission.
 python -m tools.draft_trials.family_two --output /fresh/absolute/stage2 --stage 2
@@ -610,9 +640,9 @@ python -m tools.draft_trials.family_two --output /fresh/absolute/stage2 --stage 
 
 The output directory must be fresh and absolute; library isolation is set before
 backend imports. No inference, judge or real-call mode exists in this command.
-The existing trial CLI intentionally continues rejecting `--case-set 4` until
-admission/integration is separately approved. Stage 2's requests and pairs stay
-out of the offline default as well.
+A saved run from before set 4 has no set 4 replies, so replaying it with
+`--case-set all` reports F2-01/02 and the four new pair verdicts as `diverged`,
+never as a pass. [Stage 1 audit, replay comparison and sizes](../../docs/audits/family_two_stage1_2026_10_31/README.md).
 
 `rules.check_rules` / `evaluate` dispatch explicit set-4 records to the new
 bounded evaluator. It uses `analyze_flow` for graph facts and independently

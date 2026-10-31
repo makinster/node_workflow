@@ -1,4 +1,4 @@
-"""Controls beside the six pairs, not new requests or admission examples."""
+"""Controls beside the six pairs, not new requests or drafter examples."""
 from copy import deepcopy
 from .case_set_four import good_draft
 
