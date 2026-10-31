@@ -19,6 +19,12 @@ errors rather than runnable warnings. Records/claims and admission
 remain pending, with no metadata text relaxed. See
 [runtime evidence](audits/merge_runtime_2026_10_30/README.md).
 
+PR #164 review follow-up (2026-10-31): fresh splits after Merge now open new
+runtime groups in the shared analysis. Already-joined and inner/outer paths stay
+refused. Dedicated startup errors are visible in App Run and typed/routable for
+child calls. Three sequential stages pass at depth 5; limit 2 refuses stage 3.
+No records/admission change; full suite 4,976 passed / 187 skipped.
+
 First helper-family admission (2026-10-30, `codex/helper-family`, from `8ee108b`)
 is implemented for owner review: Find lines, Read lines, Check reply and Context
 Pack, four cases / five calibration pairs, all sixteen-type schemas regenerated.

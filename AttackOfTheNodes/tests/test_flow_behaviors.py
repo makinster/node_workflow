@@ -317,7 +317,7 @@ def test_profile_policy_validation_and_graph_limit_are_explicit():
     nodes = graph({str(i):'echo_node' for i in range(513)}, [])
     report = analyze_flow(nodes, FACTORY, draft=True)
     assert errors(report) == {'flow_needs_review'}
-    assert '512-node' in report.findings[0].message and not report.profiles
+    assert '512 nodes' in report.findings[0].message and not report.profiles
 
 
 def test_wait_on_disconnected_target_cannot_complete():

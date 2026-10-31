@@ -6,6 +6,28 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — PR #164 fresh groups and visible startup refusals
+
+Same branch, main still `5839bfe`. Corrected the existing flow walk to clear a
+closed Merge's root/producer paths, carrying a closed-join marker only until a
+new split. Sequential splits get their own plans; already-joined and inner/outer
+joins stay refused. Removed the ancestor-join reachability test that overblocked
+fresh groups; no replacement traversal was added. Existing draft gates remain.
+
+Added eight integration cases (30 total): two/three sequential splits, three
+stages at depth limit 2, direct Merge-to-Merge refusal, inner/outer refusal, two
+joins sharing one split, a real Run-key pilot with visible refusal and successful
+repair/retry, and a child refusal routed as `child_flow_invalid`. The dedicated
+`MergePlanError(ValueError)` is handled by both app startup and child calls.
+User-facing diagnostics now name the bad connection and repair in plain words.
+Three stages complete at limit 5; at limit 2 the third Branch returns the typed
+refusal because supervisor depth accumulates even after its group closes.
+
+Focused runtime/flow/subworkflow checks: **163 passed**. Full `pytest -n auto`:
+**4,976 passed, 187 skipped in 47.18 s**, zero xfails. Re-attested runtime sources
+and refreshed the claims receipt, including the child-call dependency. No real
+API/model calls, loop logic, metadata record, admission or trial changes.
+
 ## 2026-10-30 — PR #164 normal-startup integration follow-up
 
 Rebased `codex/merge-arrival-runtime` onto `5839bfe` (#162/#163), retaining both

@@ -44,11 +44,35 @@ than warnings. A normal RunService start refuses that saved graph before
 creating a run; direct automatic startup cannot produce an unproved plan either.
 Standalone Merge still passes through, as documented.
 
+## Review follow-up — 2026-10-31
+
+The existing structural walk now closes the root and producer paths when leaving
+Merge. A path-local closed-join marker is cleared only by a fresh split; this
+removes the overbroad ancestor-join search without adding another traversal.
+Two and three sequential split/Merge stages have separate roots/plans and run
+without hand-written plans. Already-joined paths, an inner join feeding an outer
+join, and two joins sharing one split still fail before normal startup.
+
+Eight added cases bring `test_merge_plan_integration.py` to **30 cases**. They
+include the three refused graphs above, sequential depth measurements, a Textual
+pilot pressing Run and checking the visible `Can't start: ...` toast followed by
+a successful repaired run, and a child refusal routed as `child_flow_invalid`.
+`MergePlanError` is a dedicated `ValueError` subclass; it is handled in app and
+child startup without swallowing unrelated ValueErrors. Diagnostic messages
+state the connection problem and repair in plain words. The size-limit assertion
+in `test_flow_behaviors.py` follows its clearer wording; its limit is unchanged.
+
+**Three-split result:** completes once at every Merge with depth limit 5. At
+limit 2 the third Branch refuses all children with `branch_depth_exceeded`.
+Closing a group does not reset supervisor depth. The continuing path still
+retains the shallowest participant's depth. No loop or draft-admission behavior
+was changed. Source/dependency attestations and the claims receipt are refreshed.
+
 ## Verification
 
 Full-suite command: `python -m pytest -n auto -q` from the app directory.
 Initial block result: **4,853 passed, 187 skipped**. Follow-up full-suite result:
-**4,968 passed, 187 skipped in 46.97 s**, zero xfails.
+**4,976 passed, 187 skipped in 47.18 s**, zero xfails.
 No real API or model calls.
 The first full run exposed two stale fingerprints, a half-initialized Supervisor
 test, and an accidental failure-abort/user-Stop flag regression. All are fixed;

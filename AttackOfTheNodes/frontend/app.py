@@ -439,12 +439,13 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
 
     async def _start_workflow(self) -> None:
         from backend.contracts import ContractInputError
+        from backend.flow_behaviors import MergePlanError
 
         try:
             started = await self.master_state.start_workflow()
-        except ContractInputError as exc:
-            # Step 4a: a required Start input with no value stops the run
-            # before it starts (C10).
+        except (ContractInputError, MergePlanError) as exc:
+            # These refusals occur before a run exists. Surface them instead
+            # of losing the error in the background start task.
             notifications.notify_error(self, f"Can't start: {exc}")
             return
         if not started:

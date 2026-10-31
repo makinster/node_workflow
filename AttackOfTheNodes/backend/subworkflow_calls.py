@@ -46,6 +46,7 @@ from .events import (
 )
 from .file_refs import is_file_reference
 from .node_errors import NodeError
+from .flow_behaviors import MergePlanError
 from .persistence import load_workflow
 
 if TYPE_CHECKING:
@@ -58,6 +59,7 @@ logger = logging.getLogger(__name__)
 CALL_ERROR_DEFINITIONS: List[Dict[str, Any]] = [
     {"code": "child_not_found", "description": "The subworkflow is missing or is not a subworkflow.", "retryable": False},
     {"code": "child_input_missing", "description": "A required input of the subworkflow has no value.", "retryable": False},
+    {"code": "child_flow_invalid", "description": "The subworkflow has unsupported Merge connections. Fix its connections before running it.", "retryable": False},
     {"code": "child_input_invalid", "description": "An input does not match the subworkflow's input type.", "retryable": False},
     {"code": "child_failed", "description": "The subworkflow failed or ended with unhandled errors.", "retryable": True},
     {"code": "child_output_conflict", "description": "The subworkflow sent its results back more than once.", "retryable": False},
@@ -293,6 +295,8 @@ async def call_subworkflow(
                 input_provider=run.input_provider,
                 inputs=typed,
             )
+        except MergePlanError as exc:
+            raise NodeError("child_flow_invalid", str(exc), retryable=False) from None
         except ContractInputError as exc:
             code = "child_input_missing" if exc.missing else "child_input_invalid"
             raise NodeError(code, str(exc), details={"missing": exc.missing, "invalid": exc.invalid,

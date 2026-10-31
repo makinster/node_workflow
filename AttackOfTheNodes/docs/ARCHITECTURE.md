@@ -210,15 +210,27 @@ Explicit plan dictionaries still override automatic derivation, including an
 empty dictionary for unsupported-shape tests. Graph-declared producer lineages
 exclude independent side paths from the join, including their terminal failures.
 
-Unproved slot shapes, repeated joins, unrelated groups and collecting graphs
-beyond the analysis bounds are app-validation errors. An attempted direct start
-without a provable plan also fails before creating a run. A bypassed two-Merge
-same-family graph demonstrates why: the first winner detaches from its group,
-so the second join merely passes through the first record, rather than collecting
-again. Repeated shapes remain unsupported; they are no longer warnings that
-permit incorrect execution. Branch depth refusal is delivered as an error
-to Branch before any child launches. All coordination state retires per run;
-old-run callbacks cannot affect a new run's completion registry.
+Leaving a Merge closes that group's root and producer paths in the analyser,
+matching the continuing supervisor at runtime. A later Branch opens a new group;
+sequential split/Merge stages therefore have separate plans. The same structural
+walk carries a closed-join marker until a new split, so direct Merge-to-Merge
+chains and an inner join feeding an outer join still fail preflight. Two Merges
+on separate paths of one split are also refused. No extra graph traversal is used.
+The existing draft admission gate is unchanged.
+
+Unproved inputs, already-joined paths, unrelated splits and collecting graphs
+beyond analysis bounds are app-validation errors. Direct automatic startup
+raises `MergePlanError`, a dedicated `ValueError` subclass, before creating a run.
+App Run displays it as `Can't start: ...` and remains usable; subworkflow calls
+translate it into the declared, non-retryable `child_flow_invalid` error, which
+can be routed through the calling node's error output. Messages say which paths
+to reconnect, without exposing the analyser's internal vocabulary.
+
+Sequential groups do not reset supervisor depth. Three sequential stages complete
+with `max_branch_depth=5`; at limit 2, the third Branch refuses all its children
+with `branch_depth_exceeded`. The shallowest arrival still determines the depth
+retained after each join. All coordination state retires per run; old-run
+callbacks cannot affect a new run's completion registry.
 
 Five input slots is the default, not a fixed maximum. Frontend configuration
 chooses actual slots/Beacon edges through WorkflowMap; refresh is not a license

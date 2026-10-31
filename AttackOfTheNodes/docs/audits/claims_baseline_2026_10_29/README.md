@@ -272,3 +272,8 @@ metadata review and drafter admission. The original explicit
 `MergePlan` fixtures remain; the follow-up now derives normal-startup plans from
 the shared flow proof after rebasing onto #162/#163. Saved and child workflows
 are covered by normal-startup engine tests; unproved shapes fail preflight.
+
+2026-10-31 recheck: fresh groups after Merge, plain startup refusals, and the
+child-call error translation are covered by the refreshed receipt. Added the
+child-call source dependency; no reviewed metadata text or admission changed.
+The 57 explicit-plan cases remain, alongside 30 startup integration cases.

@@ -5,7 +5,7 @@ import json
 import pytest
 
 from backend.contracts import workflow_revision
-from backend.flow_behaviors import analyze_flow, merge_plans_from_analysis
+from backend.flow_behaviors import MergePlanError, analyze_flow, merge_plans_from_analysis
 from backend.run_service import RunService, WorkflowValidationError
 from backend.save_manager import SaveManager
 from backend.validator import validate_workflow
@@ -164,7 +164,7 @@ async def test_two_merges_reproduce_passthrough_when_preflight_is_bypassed_then_
     e.wire(first,second,slot='path_a');e.wire(second,show)
     report=analyze_flow(e.wm.get_all_node_data(),e.factory)
     assert report.merges[second].shape_status=='needs_review'
-    with pytest.raises(ValueError,match='slot shape cannot be proved'):
+    with pytest.raises(MergePlanError,match='earlier Merge'):
         merge_plans_from_analysis(report)
     # Deliberate diagnostic bypass: measure the unsupported runtime behavior.
     # Only the first join has a proof, matching what can actually be declared.
@@ -205,3 +205,135 @@ async def test_each_start_uses_its_own_captured_workflow_revision(tmp_path):
     assert second.merge_plans[merge].slots['path_a'].cardinality=='many'
     assert e.memory.read_transient(merge,'default')=={'path_a':['A contents','B contents']}
     assert not e.errors()
+
+
+def sequential_splits(e, count):
+    previous = e.start
+    forks, merges = [], []
+    for _ in range(count):
+        fork, merge = e.add('branch_node'), e.add('merge_node')
+        e.wire(previous, fork)
+        for port in ['path_a', 'path_b']:
+            step = e.add('no_op_node')
+            e.wire(fork, step, port); e.wire(step, merge, slot=port)
+        forks.append(fork); merges.append(merge); previous = merge
+    show = e.add('text_output_node', label='', template='{input}')
+    end = e.add('end_node', record_line=False)
+    e.wire(previous, show); e.wire(show, end)
+    return forks, merges, show, end
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('count,limit', [(2, 5), (3, 5), (3, 2)])
+async def test_sequential_splits_open_new_groups_and_preserve_runtime_depth(count, limit):
+    e = Engine()
+    forks, merges, _, _ = sequential_splits(e, count)
+    e.master._configuration_manager._settings['max_branch_depth'] = limit
+    await start(e); await e.finish()
+    plans = e.master.run_context.merge_plans
+    assert [plans[mid].fork_node_id for mid in merges] == forks
+    assert all(plan.slots['path_a'].producers == ((0,),) for plan in plans.values())
+    if count <= limit:
+        expected = 'seed'
+        for _ in range(count): expected = {'path_a':expected, 'path_b':expected}
+        assert not e.errors() and e.memory.read_transient(merges[-1], 'default') == expected
+        assert all(len(e.done(mid)) == 1 for mid in merges)
+        assert max(r['depth'] for r in e.registered) == count
+    else:
+        assert len(e.errors()) == 1 and e.errors()[0]['code'] == 'branch_depth_exceeded'
+        assert e.errors()[0]['node_id'] == forks[-1] and not e.done(merges[-1])
+        assert max(r['depth'] for r in e.registered) == limit
+
+
+def refused_chain(e):
+    forks, merges, show, end = sequential_splits(e, 1)
+    second = e.add('merge_node')
+    e.wm.disconnect(merges[0], 'default', show, 'input')
+    e.wire(merges[0], second, slot='path_a'); e.wire(second, show)
+    return second
+
+
+@pytest.mark.asyncio
+async def test_merge_after_merge_without_a_new_split_is_refused_before_start():
+    e = Engine(); second = refused_chain(e)
+    result = validate_workflow(e.wm, e.factory)
+    messages=[x['message'] for x in result['errors'] if x['code']=='flow_needs_review' and x['node_id']==second]
+    assert messages and 'Connect these paths to one Merge.' in messages[0]
+    assert all(word not in message.lower() for message in messages
+               for word in ('family','arrival','lineage','shape needs review'))
+    with pytest.raises(MergePlanError, match='earlier Merge'):
+        await e.master.start_workflow(unattended='terminate_branch')
+    assert e.master.current_run_id is None and not e.master._supervisor_tasks
+
+
+@pytest.mark.asyncio
+async def test_inner_join_cannot_feed_outer_join_before_start():
+    e = Engine()
+    fork, nested, inner, outer = [e.add(t) for t in ['branch_node','branch_node','merge_node','merge_node']]
+    a, c, d = [e.add('no_op_node') for _ in range(3)]
+    e.wire(e.start,fork);e.wire(fork,a,'path_a');e.wire(fork,nested,'path_b')
+    e.wire(nested,c,'path_a');e.wire(nested,d,'path_b')
+    e.wire(c,inner,slot='path_a');e.wire(d,inner,slot='path_b')
+    e.wire(a,outer,slot='path_a');e.wire(inner,outer,slot='path_b')
+    result=validate_workflow(e.wm,e.factory)
+    assert any(x['code']=='flow_needs_review' and x['node_id']==outer for x in result['errors'])
+    with pytest.raises(MergePlanError): await e.master.start_workflow(unattended='terminate_branch')
+    assert e.master.current_run_id is None
+
+
+@pytest.mark.asyncio
+async def test_two_joins_on_separate_paths_of_one_split_are_refused():
+    e = Engine(); fork = e.add('branch_node',branch_count=4)
+    first, second = e.add('merge_node'),e.add('merge_node')
+    e.wire(e.start,fork)
+    for port,target,slot in [('path_a',first,'path_a'),('path_b',first,'path_b'),
+                              ('path_c',second,'path_a'),('path_d',second,'path_b')]:
+        step=e.add('no_op_node');e.wire(fork,step,port);e.wire(step,target,slot=slot)
+    result=validate_workflow(e.wm,e.factory)
+    assert {x['node_id'] for x in result['errors'] if x['code']=='flow_needs_review'}=={first,second}
+    with pytest.raises(MergePlanError,match='different Merges'):
+        await e.master.start_workflow(unattended='terminate_branch')
+
+
+@pytest.mark.asyncio
+async def test_app_run_shows_refusal_and_can_run_after_repair():
+    from frontend.app import AttackOfTheNodesApp
+    e = Engine(); second = refused_chain(e)
+    app=AttackOfTheNodesApp(e.bus,e.factory,e.wm,e.memory,e.master)
+    async with app.run_test(size=(100, 40), notifications=True) as pilot:
+        await pilot.press('ctrl+r'); await pilot.pause(0.3)
+        toasts=[t for t in app.screen.query('Toast') if "Can't start:" in t._notification.message]
+        assert len(toasts)==1 and toasts[0].region.width>0
+        assert 'earlier Merge' in toasts[0]._notification.message
+        assert e.master.current_run_id is None
+        # Repair the refused graph and press Run again through the same app.
+        incoming=e.wm.get_node_data(second)['connections']['inputs'][0]
+        outgoing=e.wm.get_node_data(second)['connections']['outputs'][0]
+        e.wm.disconnect(incoming['source_node_id'],incoming['source_port'],second,incoming['target_port'])
+        e.wm.disconnect(second,outgoing['source_port'],outgoing['target_node_id'],outgoing['target_port'])
+        e.wire(incoming['source_node_id'],outgoing['target_node_id'],slot=outgoing['target_port'])
+        e.wm.delete_node(second)
+        await pilot.press('ctrl+r');await pilot.pause(0.3)
+        await e.finish()
+        assert e.master.current_run_id is not None and not e.errors()
+        assert e.master.run_outputs
+
+
+@pytest.mark.asyncio
+async def test_refused_subworkflow_has_a_typed_routable_error():
+    child=Engine();refused_chain(child);child.wm.set_callable(True)
+    SaveManager(child.wm).save_current_workflow()
+    parent=Engine()
+    call=parent.add('subworkflow_node',workflow_id=child.wm.workflow_id,inputs=[],results=[])
+    show=parent.add('text_output_node',label='',template='{input[code]}')
+    end=parent.add('end_node',record_line=False)
+    parent.wire(parent.start,call);parent.wire(call,end)
+    parent.wire(call,show,'error');parent.wire(show,end)
+    await start(parent);await parent.finish()
+    assert len(parent.errors())==1
+    error=parent.errors()[0]
+    assert error['node_id']==call and error['code']=='child_flow_invalid' and error['handled']
+    assert 'earlier Merge' in error['message']
+    assert parent.memory.read_transient(call,'error')['retryable'] is False
+    assert parent.master.run_outputs==['child_flow_invalid']
+    assert parent.master.call_tree.live==0

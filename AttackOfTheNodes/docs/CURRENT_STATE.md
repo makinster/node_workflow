@@ -42,6 +42,23 @@ records or node admission are signed. Affected existing source dependencies
 and the executable claims receipt are re-attested; independent admission review
 is still required. Verification and code/plan differences are in the Session Log.
 
+## PR #164 review fixes — 2026-10-31 (Important)
+
+The shared analyser now closes the root/producer paths after Merge in its existing
+walk. Later splits open fresh groups; two and three sequential split/Merge stages
+run normally without explicit plans. Direct Merge-to-Merge chains, inner joins
+feeding outer joins and two joins sharing one split remain preflight errors.
+Three stages pass at depth limit 5; limit 2 refuses the third Branch. Depth is
+retained by the continuing supervisor rather than reset when a group closes.
+
+`MergePlanError` distinguishes startup refusals from other ValueErrors. App Run
+shows `Can't start: ...` and can run again after repair (pilot proof). Child calls
+emit the declared `child_flow_invalid` error, with an exercised error route and
+cleanup. Plain diagnostics describe the bad connections and the repair. No loop
+logic, metadata text, admission or trial changes. Fingerprints/claims receipt
+are re-attested. Full `pytest -n auto`: **4,976 passed, 187 skipped in 47.18 s**,
+zero xfails; 57 explicit-plan cases plus 30 startup integration cases remain.
+
 ## Collecting Merge runtime, block 1 — 2026-10-30 (Important)
 
 Branch `codex/merge-arrival-runtime`, based on `f57f4ed`, implements approved
