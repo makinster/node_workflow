@@ -52,6 +52,7 @@ from .port_types import (
 from .save_manager import SaveManager
 from .data_types import types_compatible
 from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_workflow
+from .flow_behaviors import parse_targets
 from .vault_declarations import typed_vault_writes, vault_read_entries
 from .node_capabilities import STANDARD_FLAGS, supported_standard_flags
 from .workflow_map import WorkflowMap
@@ -535,7 +536,7 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
     """Validator issues as diagnostics (a bad number the spec check already
     reported for a node is not repeated)."""
     reported = {(d["code"], d["node"]) for d in diagnostics if d["code"] == "invalid_number"}
-    result = validate_workflow(workflow_map, factory)
+    result = validate_workflow(workflow_map, factory, draft=True)
     for level, issues in (("error", result["errors"]), ("warning", result["warnings"])):
         for issue in issues:
             code = str(issue.get("code") or "validation")
@@ -545,7 +546,10 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
             # A spec that wires one output twice is a mistake, not a choice.
             if code in BUILD_ERROR_CODES:
                 level = "error"
-            add(level, code, str(issue.get("message") or ""), handle, issue.get("field"))
+            guidance = {key: issue[key] for key in ("slot", "route", "repair") if issue.get(key)}
+            if issue.get("path"):
+                guidance["path"] = [handles.get(nid, nid) for nid in issue["path"]]
+            add(level, code, str(issue.get("message") or ""), handle, issue.get("field"), **guidance)
 
 
 def _reload_problem(factory: NodeFactory, workflow_id: str, built: WorkflowMap) -> str:
@@ -734,8 +738,7 @@ def _execution_outline(factory, nodes, meta_by_type, name) -> List[str]:
 
 def _wait_targets(raw: Any) -> List[str]:
     """Wait Until targets, saved as a list (the editor) or a comma string."""
-    items = raw if isinstance(raw, list) else str(raw or "").replace("\n", ",").split(",")
-    return [str(item).strip() for item in items if str(item).strip()]
+    return list(parse_targets(raw))
 
 
 def _reachable(factory, nodes, starts, blocked=frozenset()) -> set:

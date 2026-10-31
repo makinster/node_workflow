@@ -3,7 +3,7 @@
   "scenario_version": 4,
   "base_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
   "sources": {
-    "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
+    "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
     "backend/context_pack.py": "57443dd1922fa4fb744c7593e5708072457a8b133b5172080226eab38b9dbad9",
     "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
     "backend/hermes_investigations.py": "680eb4669943a8ea0e23b4136c5c1c7d89008c16421e2ab336eb6e950de642ca",

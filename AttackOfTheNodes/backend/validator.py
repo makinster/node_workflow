@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
+from .flow_behaviors import analyze_flow, reached_with_open_family
 from .branch_paths import path_index
 from .data_types import DataType, types_compatible
 from .port_types import (
@@ -42,6 +43,21 @@ from .workflow_map import WorkflowMap
 
 if TYPE_CHECKING:
     from .secrets_manager import SecretsManager
+
+
+# Stable issue adapters, not flow rules. Literal codes retain the validator's
+# static registration contract; all semantics belong to flow_behaviors.
+_FLOW_ISSUE_TEMPLATES = {issue["code"]: issue for issue in (
+    {"code": "merge_outside_split", "message": ""},
+    {"code": "merge_required_path_escape", "message": ""},
+    {"code": "merge_required_child_omitted", "message": ""},
+    {"code": "impossible_wait", "message": ""},
+    {"code": "wait_target_missing", "message": ""},
+    {"code": "wait_target_needs_review", "message": ""},
+    {"code": "flow_loop", "message": ""},
+    {"code": "flow_needs_review", "message": ""},
+    {"code": "repeated_join_unsupported", "message": ""},
+)}
 
 
 def derive_input_sources(
@@ -157,6 +173,7 @@ def validate_workflow(
     workflow_map: WorkflowMap,
     factory: NodeFactory,
     secrets_manager: Optional["SecretsManager"] = None,
+    *, draft: bool = False,
 ) -> Dict[str, Any]:
     """Validate the loaded workflow structure."""
     errors: List[Dict[str, str]] = []
@@ -741,7 +758,23 @@ def validate_workflow(
     _check_contract(all_nodes, factory, bool(getattr(workflow_map, "callable", False)),
                     errors, warnings)
 
-    return {"success": not errors, "errors": errors, "warnings": warnings}
+    flow = analyze_flow(all_nodes, factory, draft=draft)
+    for finding in flow.findings:
+        # An ignored ordinary fan-out already explains an ambiguous hand-built
+        # fragment. Preserve that diagnostic rather than adding a speculative
+        # standalone-Merge warning for the surviving wire order.
+        if not draft and finding.code == "merge_outside_split" and any(
+            warning["code"] == "ignored_fan_out"
+            and warning["node_id"] in _build_ancestor_set(finding.node_id, all_nodes)
+            for warning in warnings
+        ):
+            continue
+        issue = dict(_FLOW_ISSUE_TEMPLATES[finding.code], node_id=finding.node_id,
+                     message=finding.message, path=list(finding.path), slot=finding.slot,
+                     route=finding.route, repair=finding.repair)
+        (errors if finding.level == "error" else warnings).append(issue)
+    return {"success": not errors, "errors": errors, "warnings": warnings,
+            "flow_analysis": flow.to_dict()}
 
 
 SUBWORKFLOW_NODE_TYPE = "subworkflow_node"
@@ -939,31 +972,8 @@ def _check_contract(all_nodes, factory, callable_workflow: bool, errors, warning
 
 
 def _reached_with_open_branch(all_nodes, target: str) -> bool:
-    """Whether some path from Start reaches ``target`` inside an unmerged
-    Parallel Branch (Branch opens a level, Merge closes one)."""
-    starts = [nid for nid, data in all_nodes.items() if data.get("type") == "start_node"]
-    seen = set()
-    stack = [(nid, 0) for nid in starts]
-    while stack:
-        node_id, open_branches = stack.pop()
-        if (node_id, open_branches) in seen or open_branches > len(all_nodes):
-            continue
-        seen.add((node_id, open_branches))
-        data = all_nodes.get(node_id) or {}
-        kind = data.get("type")
-        if kind == "merge_node":
-            open_branches = max(0, open_branches - 1)
-        if node_id == target:
-            if open_branches > 0:
-                return True
-            continue
-        if kind == "branch_node":
-            open_branches += 1
-        for conn in data.get("connections", {}).get("outputs", []):
-            nxt = conn.get("target_node_id")
-            if nxt in all_nodes:
-                stack.append((nxt, open_branches))
-    return False
+    """Compatibility hook; inherited-family semantics live in the flow owner."""
+    return reached_with_open_family(all_nodes, target)
 
 
 def _node_name(factory, node: Dict[str, Any]) -> str:

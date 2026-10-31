@@ -245,3 +245,19 @@ Mock sets 1–3 and all thirty calibration pairs pass. Full Brief/Compact:
 The twelve-type bundle remains 22,345. Representative selected snapshots peak at
 11,929 with context cap 100,000. Judge prompt and workflows/ are unchanged.
 No API calls or paid-reviewer improvement claim; no claim/code mismatches found.
+
+
+## Family 2 block 2 dependency recheck — 2026-10-30
+
+The authoring hook now calls shared graph preflight in draft mode. Source review
+confirmed that record prose, node execution, value/source behavior, standard flag
+policy and admission remain unchanged. Twelve existing records transitively
+referencing authoring or branch health have refreshed source attestations,
+including the new flow owner, validator and issue-code registry. These are
+source-dependency rechecks, not independent admission reviews or new flow records.
+
+`baseline.json.flow_analysis_recheck` pins the changed graph/check sources and
+new graph fixtures. `claims.json` was regenerated through the executable claims
+runner using its existing local doubles; the authoring fingerprint changes and
+all recorded observations remain identical. No API/model execution or owner
+workflow scan was performed. Full-suite verification is in the latest Session Log.

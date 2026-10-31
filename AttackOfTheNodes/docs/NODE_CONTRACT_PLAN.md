@@ -29,6 +29,18 @@ The record/dependency attestations and version-4 claims receipt are refreshed.
 Full suite: 4,705 passed / 187 skipped; all three mock sets pass.
 
 
+## Family 2 revision 1 — block 2 (2026-10-30)
+
+| Block | State | Evidence / remaining gate |
+|---|---|---|
+| 2. Shared graph analysis: decisions 7, 8, 11, 12 | Implemented on `codex/shared-flow-analysis`, based on `f57f4ed`; awaiting owner review | `backend/flow_behaviors.py`, app validator, authoring check and branch-health consumers; new graph fixtures. R1 approved scalar/list policy. Runtime collection remains Builder 1's work; records/admission and trial integration remain later blocks. |
+
+The owning revision-1 instructions are the owner's
+`/home/makin/src/agent_channel/family-2-records-plan.md`, approved sections only.
+See [Current State](CURRENT_STATE.md#family-2-block-2--shared-graph-analysis-2026-10-30)
+and the latest Session Log entry for API, limits and verification.
+
+
 For the checked implementation baseline, open PRs and owner gates, see
 [Current State](CURRENT_STATE.md). Phase rows below retain completion details.
 Historical integration note (2026-10-17): C7's #66 merged to the C6 branch;
