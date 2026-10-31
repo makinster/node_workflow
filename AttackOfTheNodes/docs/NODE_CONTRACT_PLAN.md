@@ -10,6 +10,13 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
+Family-2 block 3 (2026-10-31, from merged main `58a2299`): final Merge/Wait
+records, corrected editor Beacon and real-engine claim receipts implemented for
+review; no admission or Set/Get changes. Merge now restores its opening Branch
+depth after choosing the continuing path. This supersedes the dated sequential
+limit example below. See the [audit](audits/family_two_records_2026_10_31/README.md),
+including the remaining direct-start general-validation limitation.
+
 Family-2 records plan, runtime **block 1** (owner-approved revision 1,
 2026-10-30): decisions 1–6 and R1 implemented on `codex/merge-arrival-runtime`
 from `f57f4ed`, rebased onto `5839bfe` (#162/#163). The follow-up connects

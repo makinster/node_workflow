@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-30**, against fetched `origin/main` `8ee108b`
-(includes #157). Helper family: `codex/helper-family`, awaiting owner review.
-No real API calls; earlier entries retain their dated scope.
+Snapshot checked **2026-10-31**, based on `origin/main` `58a2299`
+(includes #162–#164). Family-2 final records/claims are implemented on
+`codex/family-two-records` for review; no admission change or real API calls.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -12,6 +12,20 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Family 2 block 3 — records and depth (2026-10-31)
+
+Merge restores the elected continuing path to its opening Branch depth; six/eight
+sequential splits pass while excessive nesting remains refused. Merge and Wait
+Until now have final reviewed records. Merge Beacon stays an editor joining tool,
+not dev-only; all three stay outside drafter admission. Set/Get remain pending.
+There are 18 reviewed, 25 pending and 16 dev-only registered types.
+
+The shared flow owner exports bounded versioned templates, policies and source
+provenance in catalogues and checked workflow facts. The source-bound receipt
+executes 88 real-engine scenarios. Full suite: **5,089 passed, 187 skipped**.
+The [block-3 audit](audits/family_two_records_2026_10_31/README.md) records sizes,
+changed tests and plan differences, including the direct-start validation gap.
 
 ## Family 2 block 2 — shared graph analysis (2026-10-30)
 

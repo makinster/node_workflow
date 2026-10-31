@@ -16,6 +16,7 @@ MAX_CONNECTIONS = 256
 MAX_DEPTH = 64
 PROBLEM_LIMIT = 100
 PROBLEM_CHARS = 8000
+FLOW_REPORT_CHARS = 64000
 
 
 def validate_outputs(config, *, report=False):
@@ -230,9 +231,19 @@ async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False
         rejected_codes.add('disabled_output_connection')
     rejected = not checked['ok'] or any(d.get('code') in rejected_codes for d in checked['diagnostics'])
     message, details = problem_report(checked['diagnostics'], manager, invalid=rejected)
+    def safe_flow(value):
+        if isinstance(value,str): return redact(value,manager,encoded=True)
+        if isinstance(value,dict): return {safe_flow(k):safe_flow(v) for k,v in value.items()}
+        if isinstance(value,(list,tuple)): return [safe_flow(v) for v in value]
+        return value
+    if checked.get('flow_analysis') is not None:
+        details['flow_analysis'] = safe_flow(checked['flow_analysis'])
+    result = details if rejected else dict(schema_version=1, ok=True, node_count=len(parsed['nodes']),
+                  connection_count=len(parsed.get('connections', [])),
+                  warning_count=sum(d['level'] == 'warning' for d in checked['diagnostics']), **details)
+    serialized = json.dumps(details if rejected else result,ensure_ascii=False,separators=(',',':'))
+    if len(serialized)>FLOW_REPORT_CHARS or len(serialized.encode('utf-8'))>MAX_BYTES:
+        raise NodeError('spec_too_large', 'Complete flow report exceeds its output limit; simplify the workflow.')
     if rejected:
         raise NodeError('spec_invalid', message, details=details)
-    return parsed, dict(schema_version=1, ok=True, node_count=len(parsed['nodes']),
-                        connection_count=len(parsed.get('connections', [])),
-                        warning_count=sum(d['level'] == 'warning' for d in checked['diagnostics']),
-                        **details)
+    return parsed, result

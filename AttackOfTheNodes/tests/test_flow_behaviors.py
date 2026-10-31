@@ -128,7 +128,7 @@ def test_independent_end_is_legal_and_equal_depth_has_no_invented_winner():
     report = analyze_flow(nodes, FACTORY)
     assert report.success
     assert 'E ends; supplies no Merge value.' in report.merges['combine'].summary
-    assert 'first arrival at the shallowest depth' in report.merges['combine'].summary
+    assert 'path with the fewest nested splits' in report.merges['combine'].summary
 
 
 def wait_graph(case):
@@ -364,7 +364,7 @@ def test_duplicate_path_labels_do_not_invent_equal_depth_winner():
     nodes['split']['config'].update(path_a_label='same',path_b_label='same')
     merge = analyze_flow(nodes,FACTORY).merges['combine']
     assert 'Continues as same.' not in merge.summary
-    assert 'first arrival at the shallowest depth' in merge.summary
+    assert 'path with the fewest nested splits' in merge.summary
 
 
 def test_unproved_merge_shape_is_an_app_error_after_analysis_limits_or_loops():

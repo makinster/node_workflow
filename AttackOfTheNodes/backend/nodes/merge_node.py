@@ -12,7 +12,7 @@ class MergeNode(Node):
 
     node_type: ClassVar[str] = "merge_node"
     display_name: ClassVar[str] = "Merge"
-    description: ClassVar[str] = "Wait for joining paths and collect their delivered values by input slot"
+    description: ClassVar[str] = 'Wait for joining paths, collect their results by input slot, and continue once.'
     category: ClassVar[str] = NodeCategory.FLOW
     # The type's full list; one node has its first ``input_slots`` slots.
     input_ports: ClassVar[List[str]] = list(ALL_PATH_PORTS)

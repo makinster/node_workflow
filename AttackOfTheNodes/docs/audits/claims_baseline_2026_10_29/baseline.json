@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "base_revision": "5839bfe273a461dafa0702b9fe7a3aa49bc47c38",
+  "base_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
   "date": "2026-10-30",
   "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy; collecting Merge runtime dependency recheck on 2026-10-30 (no admission change)",
   "registered_count": 59,
-  "reviewed_count": 16,
+  "reviewed_count": 18,
   "nodes": [
     {
       "node_type": "ask_claude_node",
@@ -2274,10 +2274,10 @@
     },
     {
       "node_type": "merge_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/merge_node.py",
-      "source_sha256": "cb801ee86edb2cf3cc1007b620ea911543b92c4e5bf1f7455fe043c70589cbb7",
+      "source_sha256": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
       "inputs": {
         "path_a": {
           "name": "Path A",
@@ -2710,7 +2710,7 @@
       "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/branch_end_node.py",
-      "source_sha256": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
+      "source_sha256": "cc396e5ba624fa7924a2c2a5f93fe815eada539ee6e645fc0464f59eb9ef97e5",
       "inputs": {
         "input": {
           "name": "Input",
@@ -4369,10 +4369,10 @@
     },
     {
       "node_type": "wait_until_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/wait_until_node.py",
-      "source_sha256": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
+      "source_sha256": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
       "inputs": {
         "input": {
           "name": "Input",

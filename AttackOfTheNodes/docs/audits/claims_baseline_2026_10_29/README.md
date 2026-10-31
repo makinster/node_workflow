@@ -2,10 +2,11 @@
 
 Originally captured from `439e614` for PR #151, then refreshed from
 `ee0bca449425eaa23792b08f442ac3fd81e6b2fb` after the owner's four decisions.
-This Scaffolding follow-up changes no shortlist, drafter, catalogue or admission files.
+The original Scaffolding scope is historical. The block-3 refresh adds final
+Merge/Wait review status and source hashes without changing admission.
 
 [`baseline.json`](baseline.json) is the refreshed source-reviewed snapshot of
-all 59 types: 12 reviewed records and 47 pending. It records declared ports,
+all 59 types: 18 reviewed records, 25 pending and 16 dev-only. It records declared ports,
 retained defaults, current authoring acceptance, execute support and LF-normalized
 source hashes. The original pre-repair snapshot remains in PR #151's Git history.
 Absent `to` means the legacy implicit downstream route. Tombstone is registered
@@ -24,11 +25,11 @@ it always forwards the file reference and build/check reject explicit switches.
 | `hermes_investigate_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `ask_local_model_node` | pending | V,T,D | default: downstream/vault; optional forwarding; details: vault |
 | `chat_completion_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
-| `check_reply_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
+| `check_reply_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `check_workflow_spec_node` | pending | V,T | default: downstream/vault; report: vault |
 | `concat_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `conditional_node` | reviewed | none | true, false: implicit downstream |
-| `context_pack_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
+| `context_pack_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `counter_node` | pending | none | default: downstream (fixed forwarding); count: downstream number |
 | `deep_branch_node` | pending | none | branch: implicit downstream |
 | `tombstone_node` | pending | none | none |
@@ -42,7 +43,7 @@ it always forwards the file reference and build/check reject explicit switches.
 | `file_reader_node` | reviewed | V,T | default: downstream/vault |
 | `file_output_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `file_age_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
-| `find_lines_node` | pending | V,T,D | default: downstream/vault; optional forwarding; match_count: vault |
+| `find_lines_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding; match_count: vault |
 | `get_variable_node` | pending | none | default: implicit downstream |
 | `git_status_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `http_request_node` | pending | none | default: implicit downstream |
@@ -53,7 +54,7 @@ it always forwards the file reference and build/check reject explicit switches.
 | `pick_one_node` | pending | V,T,D | default: downstream/vault; optional forwarding; details: vault |
 | `logger_node` | pending | none | default: implicit downstream |
 | `memory_snapshot_node` | pending | none | default: implicit downstream |
-| `merge_node` | pending | none | default: implicit downstream |
+| `merge_node` | reviewed | none | default: implicit downstream |
 | `branch_end_node` | reviewed | none | default: implicit downstream |
 | `no_op_node` | pending | none | default: implicit downstream |
 | `node_catalogue_node` | pending | V,T | default: downstream/vault |
@@ -62,7 +63,7 @@ it always forwards the file reference and build/check reject explicit switches.
 | `probe_node` | pending | none | default: implicit downstream |
 | `random_branch_node` | pending | none | path_a, path_b: implicit downstream |
 | `random_number_node` | pending | none | default: implicit downstream |
-| `read_lines_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
+| `read_lines_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `recall_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `record_event_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `remember_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
@@ -76,7 +77,7 @@ it always forwards the file reference and build/check reject explicit switches.
 | `user_text_input_node` | reviewed | none | default: implicit downstream |
 | `variable_reader_node` | pending | none | default: implicit downstream |
 | `variable_setter_node` | pending | none | default: implicit downstream |
-| `wait_until_node` | pending | none | default: implicit downstream |
+| `wait_until_node` | reviewed | none | default: implicit downstream |
 | `window_control_node` | pending | none | default: downstream |
 
 ## Executable evidence and limits
@@ -277,3 +278,10 @@ are covered by normal-startup engine tests; unproved shapes fail preflight.
 child-call error translation are covered by the refreshed receipt. Added the
 child-call source dependency; no reviewed metadata text or admission changed.
 The 57 explicit-plan cases remain, alongside 30 startup integration cases.
+
+## Family-2 receipt refresh (2026-10-31)
+
+Generic flag checks remain protocol-level tests; they do not prove join or wait
+coordination through callback mocks. The separate [real-engine receipt](../family_two_records_2026_10_31/README.md)
+binds 88 scenarios to source hashes and observed runs. Metadata review and drafter
+admission are separate; the generic receipt now reads actual record status.

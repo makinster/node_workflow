@@ -63,7 +63,7 @@ def test_coverage_is_a_disjoint_three_way_split():
     assert not reviewed & PENDING_REVIEW and not reviewed & DEV_TEST_ONLY
     assert not PENDING_REVIEW & DEV_TEST_ONLY
     assert reviewed | PENDING_REVIEW | DEV_TEST_ONLY == registered
-    assert (len(reviewed), len(PENDING_REVIEW), len(DEV_TEST_ONLY)) == (16, 27, 16)
+    assert (len(reviewed), len(PENDING_REVIEW), len(DEV_TEST_ONLY)) == (18, 25, 16)
 
 
 def test_record_shape_and_visibility_stay_independent():

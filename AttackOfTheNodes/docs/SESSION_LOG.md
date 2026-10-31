@@ -6,6 +6,22 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Family-2 final records, claims and depth
+
+Based on merged main `58a2299`. Separate depth commit `943c83f` restores the
+winning supervisor to its opening Branch depth after election; six/eight normal
+sequential groups pass and real nesting past five still fails atomically.
+Final Merge/Wait records, editor Beacon wording, seven bounded flow templates,
+checked-flow exports and source/policy provenance are implemented without
+admission or Set/Get changes. Real-engine claims receipt covers 88 scenarios.
+Full suite: **5,089 passed, 187 skipped**, 48.27 seconds. No API calls.
+
+The [audit](audits/family_two_records_2026_10_31/README.md) includes complete
+sizes, changed-test reasons and plan differences. A manual probe confirms that
+full validation refuses a joining path escaping to End, but direct startup can
+bypass this validation and emit a partial record. This existing App Run entry-
+point gap is reported, not silently changed in the records milestone.
+
 ## 2026-10-31 — PR #164 fresh groups and visible startup refusals
 
 Same branch, main still `5839bfe`. Corrected the existing flow walk to clear a

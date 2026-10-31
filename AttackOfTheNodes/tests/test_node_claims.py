@@ -567,6 +567,7 @@ def evidence_hashes():
         'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py','backend/port_types.py',
         'backend/master_state.py','backend/run_context.py','tests/test_merge_arrival_runtime.py',
         'tests/test_merge_plan_integration.py','backend/subworkflow_calls.py',
+        'tests/test_flow_claims.py','tests/flow_claim_scenarios.py','tests/flow_engine_scenarios.py','tests/test_family_two_records.py',
         'backend/node_metadata.py','backend/saved_values.py','backend/meta_workflow.py',
         'backend/node_catalogue.py','backend/palette_selection.py',
         'tests/test_helper_family_admission.py','tests/test_helper_family_followup.py',
@@ -599,8 +600,8 @@ async def test_claims_receipt(tmp_path,boundaries):
                 if kind == 'window_control_node' and dimension == 'transient_output':
                     observations[dimension].update(supported=False, reason=WINDOW_SUPPRESSION_REASON)
         run=await execute(kind,tmp_path/kind/'trace')
-        rows.append(dict(node_type=kind,reviewed=kind in ADMITTED,boundary=CASES[kind].get('boundary','local context and temporary files'),
-            limits=('Reviewed palette value/source and graph matrix is tested separately.' if kind in ADMITTED else 'Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.'),claims=observations,trace=dict(required_optional_reads=vault_read_entries(kind,run.node.config,resolved_metadata(FACTORY,kind,run.node.config)),
+        rows.append(dict(node_type=kind,reviewed=FACTORY.metadata_for_type(kind).get('node_metadata') is not None,boundary=CASES[kind].get('boundary','local context and temporary files'),
+            limits=('Flow callbacks here verify protocol only; real coordinator evidence is in family_two_records_2026_10_31/claims.json.' if kind in {'merge_node','wait_until_node'} else 'Reviewed palette value/source and graph matrix is tested separately.' if kind in ADMITTED else 'Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.'),claims=observations,trace=dict(required_optional_reads=vault_read_entries(kind,run.node.config,resolved_metadata(FACTORY,kind,run.node.config)),
             actual_reads=run.memory.reads,snapshot_keys=run.memory.snapshots,
             attempted_writes=run.memory.attempted,committed_writes=[{'key':k,'type':t} for k,_,t in run.memory.committed],
             emitted_ports=list(output(run)),errors=[str(e) for e in run.errors])))

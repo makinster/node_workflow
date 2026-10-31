@@ -9,9 +9,9 @@
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -25,11 +25,11 @@
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
         "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
       ],
-      "content_sha256": "edd10e0599c4254e65f6ecd4a16c65e6530ccd2fd9a02f105d23f7a74278d592",
+      "content_sha256": "aa02d3d6ed6df691247300bdfe88c74c4db82ce5e83950d5c82874d03ae50dbf",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "end_node": {
       "sources": {
@@ -40,9 +40,9 @@
         "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -57,24 +57,27 @@
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
         "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
       ],
-      "content_sha256": "241986825014650a91ad61f1b66bf9a525758c51b954169c4875b8a28fb12e22",
+      "content_sha256": "d1286b3cd480d410205b781edb27d75fae9637801d584f50fa0263762bcd5717",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "branch_end_node": {
       "sources": {
-        "backend/nodes/branch_end_node.py": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
+        "backend/nodes/branch_end_node.py": "cc396e5ba624fa7924a2c2a5f93fe815eada539ee6e645fc0464f59eb9ef97e5",
         "backend/branch_health.py": "692a001f949d36a144e4f252ac81c72e536a674038c1147f3f3469e91f2da751",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
-        "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
+        "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
+        "frontend/screens/editor.py": "dcc7a805c951d4736cc984f22acf5eaec50f6f0b924e428418d696ff66955fab",
+        "frontend/screens/node_config.py": "acd56e2f8ec77c760470caa888e70b400c679fbd3912c84e48e67ab4fb09d0ec",
+        "frontend/editor_workflow_adapter.py": "6775160e893937096ab7c4d50b84912a96d6041bd02a153704190ff196a1e21e"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_merge_beacon_forwards_unchanged",
@@ -83,13 +86,16 @@
         "tests/test_node_claims.py::test_palette_real_engine_delivery",
         "tests/test_node_claims.py::test_claims_evidence_is_current",
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
-        "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
+        "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure",
+        "tests/test_merge_branch_identity.py::test_no_edit_merge_save_keeps_closure_carry_forward_and_beacon",
+        "tests/test_merge_branch_identity.py::test_no_edit_save_keeps_unmatched_values_and_warns",
+        "tests/test_debug_nodes.py::test_merge_beacon_selector_row_jumps_without_rewiring"
       ],
-      "content_sha256": "a7b11e79741185b004a04ca305cef2bd7c883b40c92421d50630578cf89c498f",
+      "content_sha256": "99072bc39d7c0cda5cf3fbd56bd79f25dd7074fe9989a806af95a7e299fe6619",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "branch_node": {
       "sources": {
@@ -98,9 +104,9 @@
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -113,11 +119,11 @@
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
         "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
       ],
-      "content_sha256": "e94e747ac47b035dd44de06a0de7188c15366d2669de39c648c8ad613a1e9cb5",
+      "content_sha256": "225fcd31d7cf6ae59f14b88a66a76b3fc29314b2d7433ae86f2c3a80225d857c",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "user_text_input_node": {
       "sources": {
@@ -127,9 +133,9 @@
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -148,7 +154,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "text_output_node": {
       "sources": {
@@ -159,9 +165,9 @@
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -181,7 +187,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "text_transform_node": {
       "sources": {
@@ -189,10 +195,10 @@
         "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -210,7 +216,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "file_reader_node": {
       "sources": {
@@ -220,10 +226,10 @@
         "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -242,7 +248,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "file_output_node": {
       "sources": {
@@ -256,10 +262,10 @@
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -279,7 +285,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "conditional_node": {
       "sources": {
@@ -287,9 +293,9 @@
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -305,11 +311,11 @@
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
         "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
       ],
-      "content_sha256": "c77fb3895f3ef4be218c700e63619574069a71f46b9783169bf98b84454e103f",
+      "content_sha256": "851d5b0cda1bb2a82f22cc7d16a9560c5c0e1b6a8943ac874d52c6405c18fbf8",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "concat_node": {
       "sources": {
@@ -317,10 +323,10 @@
         "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -341,17 +347,17 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "json_path_node": {
       "sources": {
         "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/flow_behaviors.py": "8a8de8f763b66257a55940c46b36a9702e51152dfe06e17132c0257b8792b2fb",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
       },
@@ -369,7 +375,7 @@
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
       "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "merge-opening-depth-source-recheck"
+      "verifier": "family-two-source-runtime-recheck"
     },
     "find_lines_node": {
       "sources": {
@@ -471,6 +477,70 @@
       "verifier": "exact-layout-source-and-byte-scenario-recheck",
       "reviewed": "2026-10-30",
       "source_revision": "cde189b7e2950463341699dafe457b42b9f85daa"
+    },
+    "merge_node": {
+      "sources": {
+        "backend/nodes/merge_node.py": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
+        "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
+        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
+        "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
+        "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
+        "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
+        "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
+        "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
+        "backend/meta_workflow.py": "db9acc94f438dc0cef8709a57b22ce77d6feca7d6d0c0ddd1d8a2f58a2b6b2a0",
+        "tests/test_flow_claims.py": "5277b56c569e126712709a7dbfa8e9d929c79f9edbbe3a1834d230ba9b401d0b",
+        "tests/flow_claim_scenarios.py": "a2c914f66368e509d80fee2b1a83a3cee4b440501f014074e943a65de3825315",
+        "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118"
+      },
+      "tests": [
+        "tests/test_flow_claims.py::test_real_engine_flow_claim",
+        "tests/test_flow_claims.py::test_flow_claims_receipt",
+        "tests/test_flow_claims.py::test_flow_receipt_is_current",
+        "tests/test_family_two_records.py::test_flow_templates_are_exported_validated_hashed_and_bounded",
+        "tests/test_family_two_records.py::test_check_exports_stable_handle_flow_data_with_provenance"
+      ],
+      "content_sha256": "3a8f5754833ead305ef4024d768c393f549d2fffc409ddd7973e12176dd7b1ba",
+      "author": "family-two-record-author",
+      "verifier": "family-two-source-runtime-recheck",
+      "reviewed": "2026-10-31",
+      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d"
+    },
+    "wait_until_node": {
+      "sources": {
+        "backend/nodes/wait_until_node.py": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
+        "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
+        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
+        "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
+        "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
+        "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
+        "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
+        "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
+        "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
+        "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
+        "backend/meta_workflow.py": "db9acc94f438dc0cef8709a57b22ce77d6feca7d6d0c0ddd1d8a2f58a2b6b2a0",
+        "tests/test_flow_claims.py": "5277b56c569e126712709a7dbfa8e9d929c79f9edbbe3a1834d230ba9b401d0b",
+        "tests/flow_claim_scenarios.py": "a2c914f66368e509d80fee2b1a83a3cee4b440501f014074e943a65de3825315",
+        "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118"
+      },
+      "tests": [
+        "tests/test_flow_claims.py::test_real_engine_flow_claim",
+        "tests/test_flow_claims.py::test_flow_claims_receipt",
+        "tests/test_flow_claims.py::test_flow_receipt_is_current",
+        "tests/test_family_two_records.py::test_flow_templates_are_exported_validated_hashed_and_bounded",
+        "tests/test_family_two_records.py::test_check_exports_stable_handle_flow_data_with_provenance"
+      ],
+      "content_sha256": "5912e3f6e245deee6b01c7898e44c5d56cc995e10c89b319fc3d09f0c0c5cdcf",
+      "author": "family-two-record-author",
+      "verifier": "family-two-source-runtime-recheck",
+      "reviewed": "2026-10-31",
+      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d"
     }
   }
 }
