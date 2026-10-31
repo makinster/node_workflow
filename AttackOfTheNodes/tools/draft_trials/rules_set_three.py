@@ -16,7 +16,7 @@ from backend.palette_selection import ADMITTED
 
 # Sequential local nodes execute directly. Parallel scheduling needs the real
 # coordinator; file writes are forbidden by these read-only case outcomes.
-LOCAL_EXECUTABLE = frozenset('start_node end_node branch_end_node user_text_input_node text_output_node text_transform_node file_reader_node conditional_node concat_node json_path_node find_lines_node read_lines_node check_reply_node context_pack_node'.split())
+LOCAL_EXECUTABLE = frozenset('start_node end_node user_text_input_node text_output_node text_transform_node file_reader_node conditional_node concat_node json_path_node find_lines_node read_lines_node check_reply_node context_pack_node'.split())
 
 def safety(spec, case):
     from collections import defaultdict

@@ -1,0 +1,1313 @@
+[
+  {
+    "id": "collect_vs_pick_one",
+    "number": 1,
+    "case": 2,
+    "case_set": 4,
+    "required_stage": 1,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 3
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Value: {input[path_a]}\nFlag: {input[path_b]}\nNote: {input[path_c]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "value": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/value.json",
+            "input_source": "Configured"
+          }
+        },
+        "value_field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "value"
+          }
+        },
+        "flag": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/flag.json",
+            "input_source": "Configured"
+          }
+        },
+        "flag_field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "flag"
+          }
+        },
+        "note": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/note.txt",
+            "input_source": "Configured"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "value.input"
+        },
+        {
+          "from": "value.default",
+          "to": "value_field.input"
+        },
+        {
+          "from": "value_field.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "split.path_b",
+          "to": "flag.input"
+        },
+        {
+          "from": "flag.default",
+          "to": "flag_field.input"
+        },
+        {
+          "from": "flag_field.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "split.path_c",
+          "to": "note.input"
+        },
+        {
+          "from": "note.default",
+          "to": "join.path_c"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 3
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "value": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/value.json",
+            "input_source": "Configured"
+          }
+        },
+        "value_field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "value"
+          }
+        },
+        "flag": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/flag.json",
+            "input_source": "Configured"
+          }
+        },
+        "flag_field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "flag"
+          }
+        },
+        "note": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/note.txt",
+            "input_source": "Configured"
+          }
+        },
+        "pick": {
+          "type": "json_path_node",
+          "config": {
+            "path": "path_a"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "pick.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "value.input"
+        },
+        {
+          "from": "value.default",
+          "to": "value_field.input"
+        },
+        {
+          "from": "value_field.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "split.path_b",
+          "to": "flag.input"
+        },
+        {
+          "from": "flag.default",
+          "to": "flag_field.input"
+        },
+        {
+          "from": "flag_field.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "split.path_c",
+          "to": "note.input"
+        },
+        {
+          "from": "note.default",
+          "to": "join.path_c"
+        },
+        {
+          "from": "pick.default",
+          "to": "show.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "handoff_vs_lost_child",
+    "number": 2,
+    "case": 3,
+    "case_set": 4,
+    "required_stage": 2,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Slow: {input[path_a]}\nUpper: {input[path_b]}\nLower: {input[path_c]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "slow": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/slow.txt",
+            "input_source": "Configured"
+          }
+        },
+        "gather": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/gather.txt",
+            "input_source": "Configured"
+          }
+        },
+        "children": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "slow.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "gather.input"
+        },
+        {
+          "from": "slow.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "gather.default",
+          "to": "children.input"
+        },
+        {
+          "from": "children.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "children.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "join.path_c"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Slow: {input[path_a]}\nUpper: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "slow": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/slow.txt",
+            "input_source": "Configured"
+          }
+        },
+        "gather": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/gather.txt",
+            "input_source": "Configured"
+          }
+        },
+        "children": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "slow.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "gather.input"
+        },
+        {
+          "from": "slow.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "gather.default",
+          "to": "children.input"
+        },
+        {
+          "from": "children.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "children.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "end.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "either_or_vs_escape",
+    "number": 3,
+    "case": 5,
+    "case_set": 4,
+    "required_stage": 2,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 5",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Note: {input[path_a]}\nDecision: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "note": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/note.txt",
+            "input_source": "Configured"
+          }
+        },
+        "choice": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/choice.txt",
+            "input_source": "Configured"
+          }
+        },
+        "choose": {
+          "type": "conditional_node",
+          "config": {
+            "condition_type": "equals",
+            "right_value": "yes",
+            "left_value_source": "input"
+          }
+        },
+        "yes": {
+          "type": "concat_node",
+          "config": {
+            "template": "Approved"
+          }
+        },
+        "no": {
+          "type": "concat_node",
+          "config": {
+            "template": "Needs review"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "note.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "choice.input"
+        },
+        {
+          "from": "choice.default",
+          "to": "choose.input"
+        },
+        {
+          "from": "note.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "choose.true",
+          "to": "yes.input"
+        },
+        {
+          "from": "yes.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "choose.false",
+          "to": "no.input"
+        },
+        {
+          "from": "no.default",
+          "to": "join.path_b"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 5",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Note: {input[path_a]}\nDecision: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "note": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/note.txt",
+            "input_source": "Configured"
+          }
+        },
+        "choice": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/choice.txt",
+            "input_source": "Configured"
+          }
+        },
+        "choose": {
+          "type": "conditional_node",
+          "config": {
+            "condition_type": "equals",
+            "right_value": "yes",
+            "left_value_source": "input"
+          }
+        },
+        "yes": {
+          "type": "concat_node",
+          "config": {
+            "template": "Approved"
+          }
+        },
+        "no": {
+          "type": "concat_node",
+          "config": {
+            "template": "Needs review"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "note.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "choice.input"
+        },
+        {
+          "from": "choice.default",
+          "to": "choose.input"
+        },
+        {
+          "from": "note.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "choose.true",
+          "to": "yes.input"
+        },
+        {
+          "from": "yes.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "choose.false",
+          "to": "no.input"
+        },
+        {
+          "from": "no.default",
+          "to": "end.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "gate_vs_impossible_wait",
+    "number": 4,
+    "case": 4,
+    "case_set": 4,
+    "required_stage": 2,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "File: {input[path_a]}\nStatus: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/source.txt",
+            "input_source": "Configured"
+          }
+        },
+        "wait": {
+          "type": "wait_until_node",
+          "config": {
+            "target_node_ids": [
+              "read"
+            ]
+          }
+        },
+        "ready": {
+          "type": "text_output_node",
+          "config": {
+            "template": "Ready",
+            "label": ""
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "read.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "wait.input"
+        },
+        {
+          "from": "read.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "wait.default",
+          "to": "ready.input"
+        },
+        {
+          "from": "ready.default",
+          "to": "join.path_b"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "File: {input[path_a]}\nStatus: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/source.txt",
+            "input_source": "Configured"
+          }
+        },
+        "wait": {
+          "type": "wait_until_node",
+          "config": {
+            "target_node_ids": [
+              "show"
+            ]
+          }
+        },
+        "ready": {
+          "type": "text_output_node",
+          "config": {
+            "template": "Ready",
+            "label": ""
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "read.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "wait.input"
+        },
+        {
+          "from": "read.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "wait.default",
+          "to": "ready.input"
+        },
+        {
+          "from": "ready.default",
+          "to": "join.path_b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "same_slot_list_vs_overwrite",
+    "number": 5,
+    "case": 3,
+    "case_set": 4,
+    "required_stage": 2,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Slow: {input[path_a]}\nUpper: {input[path_b][0]}\nLower: {input[path_b][1]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "slow": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/slow.txt",
+            "input_source": "Configured"
+          }
+        },
+        "gather": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/gather.txt",
+            "input_source": "Configured"
+          }
+        },
+        "children": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "slow.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "gather.input"
+        },
+        {
+          "from": "slow.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "gather.default",
+          "to": "children.input"
+        },
+        {
+          "from": "children.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "children.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "join.path_b"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Slow: {input[path_a]}\nUpper: {input[path_b]}\nLower: {input[path_b][1]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "slow": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/slow.txt",
+            "input_source": "Configured"
+          }
+        },
+        "gather": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/gather.txt",
+            "input_source": "Configured"
+          }
+        },
+        "children": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "slow.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "gather.input"
+        },
+        {
+          "from": "slow.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "gather.default",
+          "to": "children.input"
+        },
+        {
+          "from": "children.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "join.path_b"
+        },
+        {
+          "from": "children.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "join.path_b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "join_vs_shared_end",
+    "number": 6,
+    "case": 1,
+    "case_set": 4,
+    "required_stage": 1,
+    "admitted": false,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "join": {
+          "type": "merge_node",
+          "config": {}
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "A: {input[path_a]}\nB: {input[path_b]}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "a": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/report-a.txt",
+            "input_source": "Configured"
+          }
+        },
+        "b": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/report-b.txt",
+            "input_source": "Configured"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "join.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "a.input"
+        },
+        {
+          "from": "a.default",
+          "to": "join.path_a"
+        },
+        {
+          "from": "split.path_b",
+          "to": "b.input"
+        },
+        {
+          "from": "b.default",
+          "to": "join.path_b"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Family 2 case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "split": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "A: {input}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "a": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/report-a.txt",
+            "input_source": "Configured"
+          }
+        },
+        "b": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/report-b.txt",
+            "input_source": "Configured"
+          }
+        },
+        "second": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "B: {input}"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "split.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "split.path_a",
+          "to": "a.input"
+        },
+        {
+          "from": "split.path_b",
+          "to": "b.input"
+        },
+        {
+          "from": "a.default",
+          "to": "show.input"
+        },
+        {
+          "from": "b.default",
+          "to": "second.input"
+        },
+        {
+          "from": "second.default",
+          "to": "end.input"
+        }
+      ]
+    }
+  }
+]

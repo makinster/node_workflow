@@ -277,3 +277,11 @@ are covered by normal-startup engine tests; unproved shapes fail preflight.
 child-call error translation are covered by the refreshed receipt. Added the
 child-call source dependency; no reviewed metadata text or admission changed.
 The 57 explicit-plan cases remain, alongside 30 startup integration cases.
+
+
+2026-10-31 Family 2 scorer recheck: the requested Beacon cleanup changes the
+`rules_set_three.py` and `structure_rules.py` source fingerprints. Regenerated
+the executable receipt with unchanged observations (234 pass / 179 skip); no
+node source, record, palette or admission change. The separate
+[set-4 receipt](../family_two_set4_2026_10_31/README.md) carries new evaluator/data
+hashes and real-engine results; set 4 is not part of the thirty-pair default.
