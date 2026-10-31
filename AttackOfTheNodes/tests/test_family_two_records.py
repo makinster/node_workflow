@@ -33,7 +33,7 @@ def test_final_membership_preserves_state_nodes_beacon_and_admission():
     for kind in ['set_variable_node','get_variable_node']:
         assert kind in PENDING_REVIEW and kind not in DEV_TEST_ONLY
     assert 'branch_end_node' not in DEV_TEST_ONLY and 'branch_end_node' not in ADMITTED
-    assert 'merge_node' in ADMITTED and 'wait_until_node' not in ADMITTED
+    assert {'merge_node','wait_until_node'}<=ADMITTED
 
 
 @pytest.mark.parametrize('kind',sorted(FLOW_RECORD_TYPES))

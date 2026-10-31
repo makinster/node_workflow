@@ -1,6 +1,6 @@
 """Family 2 scorer. Shared graph proof; independent event/value model.
 
-Stage 1 cases run in the normal trials; Stage 2 needs an explicit offline caller.
+Requests up to the current draft stage run in the normal trials.
 No runtime collector or node execute methods are used by the logical scheduler.
 Two orders are not exhaustive.
 """
@@ -15,11 +15,11 @@ from string import Formatter
 from backend.flow_behaviors import Kind, analyze_flow, port_order
 from backend.node_factory import NodeFactory
 from backend.output_entry import text_output_prefix
-from backend.palette_selection import stage_one_problems
+from backend.palette_selection import draft_stage_problems
 from .rules import NeedsReview, RuleFailure, safe_path, effective_nodes
 from .case_set_four import fixture_variants
 
-POLICY_VERSION = 'family-2-evaluator-3'
+POLICY_VERSION = 'family-2-evaluator-4'
 LOCAL_TYPES = frozenset('start_node end_node branch_node merge_node wait_until_node file_reader_node json_path_node concat_node text_output_node text_transform_node conditional_node context_pack_node'.split())
 
 
@@ -49,12 +49,11 @@ def safety(spec, case):
     analysis=analyze_flow(graph_nodes(spec),NodeFactory(),draft=True)
     if not analysis.success:
         raise RuleFailure('; '.join(f.code+': '+f.message for f in analysis.findings if f.level=='error'))
-    if case['required_stage']>case.get('evaluation_stage',1):
+    if case['required_stage']>case['evaluation_stage']:
         raise RuleFailure('outside this admission stage: this request needs Stage 2')
-    if case.get('evaluation_stage',1)==1:
-        problems=stage_one_problems(analysis.to_dict())
-        if problems:
-            raise RuleFailure('; '.join(problems))
+    problems=draft_stage_problems(analysis.to_dict(),spec)
+    if problems:
+        raise RuleFailure('; '.join(problems))
     outgoing={}
     for edge in spec['connections']:
         if edge['from'] in outgoing:
@@ -535,4 +534,4 @@ def check_rules(spec,case):
     except (RuleFailure,KeyError,ValueError,TypeError) as exc:
         rows.append(dict(id='4.safety',result='fail',evidence=str(exc)))
     verdict='fail' if any(r['result']=='fail' for r in rows) else 'needs_review' if any(r['result']=='needs_review' for r in rows) else 'pass'
-    return dict(result=verdict,rules=rows,admitted=case['admitted'],evaluation_stage=case.get('evaluation_stage',1),policy_version=POLICY_VERSION)
+    return dict(result=verdict,rules=rows,admitted=case['admitted'],evaluation_stage=case['evaluation_stage'],policy_version=POLICY_VERSION)

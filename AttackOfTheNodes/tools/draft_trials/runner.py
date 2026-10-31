@@ -1060,7 +1060,7 @@ async def contract_inventory():
 
 
 def current_calibration_pairs():
-    # The frozen thirty stay byte-for-byte; Stage 1 pairs follow them.
+    # The frozen thirty stay byte-for-byte; the admitted set 4 pairs follow them.
     from .case_set_four import calibration_pairs as family_two_pairs
     return json.loads((Path(__file__).parent / "fixtures/calibration.json").read_text()) + family_two_pairs()
 

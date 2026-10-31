@@ -13,6 +13,16 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Family 2 Stage 2 admission (2026-10-31)
+
+Drafts can now use a path that splits again with its children joining the same Merge,
+Wait Until gates (`wait_until_node`, role `wait_for_step`) and same-slot rejoins. Merge
+Beacon and Set/Get stay out. F2-03/04/05 and pairs 2 to 5 join the normal run and
+`--case-set all`. Sets 1, 2 and 3 keep their exact palettes, role lists and designer
+prompts. The Stage 1 limit is closed: a Merge wired on only through its error output is
+refused. No API calls were made, so this shows nothing yet about drafting quality.
+[Stage 2 audit, replay comparison and paid-run watch list](audits/family_two_stage2_2026_10_31/README.md).
+
 ## Family 2 Stage 1 admission (2026-10-31)
 
 Drafts can now use `merge_node` for one shape only: one split, every path wired

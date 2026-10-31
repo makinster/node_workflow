@@ -1,6 +1,6 @@
 # Minimal saved mock run
 
-One set-1 case and all sixty calibration judgments, using explicitly canned
+One set-1 case and all calibration judgments, using explicitly canned
 SDK replies. This is protocol/contained-engine evidence, not inference evidence.
 Only the evidence needed by replay is retained: the original case, input trace,
 AI execution order, published reply text, baseline outcomes and judge replies.

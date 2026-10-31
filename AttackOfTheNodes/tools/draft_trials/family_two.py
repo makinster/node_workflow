@@ -1,8 +1,8 @@
 """Offline Family 2 evidence on the real engine.
 
 Usage: python -m tools.draft_trials.family_two --output /fresh/absolute/folder
-Stage 1, the admitted shape, is the default. --stage 2 explicitly includes the
-withheld Stage 2 fixtures; it grants no admission.
+The current draft stage is the default. --stage 1 narrows the fixtures to the
+Stage 1 requests and pairs, under the same draft check; it changes no admission.
 There is no inference, judge, real-calls, or admission option.
 """
 import argparse
@@ -84,8 +84,9 @@ async def evidence(spec,case,variant,order):
                 facts=facts,symbolic=symbolic,engine=actual)
 
 
-async def verify(output,*,stage=1):
-    from .case_set_four import case_record,fixture_variants,good_draft,calibration_pairs,case_ids
+async def verify(output,*,stage=None):
+    from .case_set_four import case_record,fixture_variants,good_draft,calibration_pairs,case_ids,DRAFT_STAGE
+    stage=DRAFT_STAGE if stage is None else stage
     from .rules_family_two import check_rules
     output=Path(output)
     cases=[]
@@ -128,8 +129,8 @@ async def verify(output,*,stage=1):
             ok=ok and all(r['outputs']==['pass through'] for r in runs)
         control_rows.append(dict(id=control['id'],required_stage=control['required_stage'],result='pass' if ok else 'fail',
                                  rules=rules,engine=runs,expected_engine=control['expected_engine']))
-    report=dict(schema_version=1,case_set=4,evaluation_only=True,stage=stage,admitted=stage==1,
-                stage_2_default=False,provenance=provenance(),
+    report=dict(schema_version=1,case_set=4,evaluation_only=True,stage=stage,admitted=stage<=DRAFT_STAGE,
+                draft_stage=DRAFT_STAGE,provenance=provenance(),
                 result='pass' if all(r['result']=='pass' for r in cases+pairs+control_rows) else 'fail',cases=cases,calibration=pairs,controls=control_rows,
                 limits=['Two controlled ready orders, not exhaustive interleavings.',
                         'Unsupported local formatting/masking forms require review.',
@@ -142,7 +143,7 @@ async def verify(output,*,stage=1):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True,help='Fresh absolute evidence folder')
-    parser.add_argument('--stage',type=int,choices=(1,2),default=1,help='Offline evaluation stage; 2 includes withheld cases and pairs')
+    parser.add_argument('--stage',type=int,choices=(1,2),help='Offline fixture stage; defaults to the current draft stage')
     args=parser.parse_args()
     # Set isolation before importing any backend modules. This command neither
     # reads the owner library nor changes the production draft palette.
@@ -154,7 +155,7 @@ def main():
     root.mkdir(parents=True)
     os.environ['AOTN_DATA_DIR']=str(root/'library')
     report=asyncio.run(verify(root,stage=args.stage))
-    print(json.dumps(dict(result=report['result'],case_set=4,evaluation_stage=args.stage,
+    print(json.dumps(dict(result=report['result'],case_set=4,evaluation_stage=report['stage'],
                           cases=len(report['cases']),pairs=len(report['calibration']),real_api_calls=0,
                           admitted=report['admitted'],report=str(root/'report.json'))))
     return 0 if report['result']=='pass' else 1

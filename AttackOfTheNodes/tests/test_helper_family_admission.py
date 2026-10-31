@@ -10,7 +10,7 @@ import pytest
 from backend.node_factory import NodeFactory
 from backend.node_errors import NodeError
 from backend import node_catalogue
-from backend.palette_selection import (ADMITTED, HELPER_PALETTE, ORIGINAL_PALETTE, HELPERS, ROLE_TYPES, STAGE_ONE,
+from backend.palette_selection import (ADMITTED, HELPER_PALETTE, ORIGINAL_PALETTE, HELPERS, ROLE_TYPES, STAGE_ONE, STAGE_TWO,
     CONTRACT_LIMIT, CONTEXT_LIMIT, exact_ids, snapshot, read_snapshot)
 from backend.node_metadata import record_problems,selection,selection_problems,NODE_METADATA
 from tools.draft_trials import runner
@@ -23,7 +23,7 @@ from tools.draft_trials.rules import check_rules
 def test_family_schema_enums_and_frozen_baseline():
     assert ORIGINAL_PALETTE==PALETTE and len(ORIGINAL_PALETTE)==11
     assert HELPER_PALETTE==ORIGINAL_PALETTE|HELPERS and len(HELPER_PALETTE)==15
-    assert ADMITTED==HELPER_PALETTE|STAGE_ONE and len(ADMITTED)==16
+    assert ADMITTED==HELPER_PALETTE|STAGE_ONE|STAGE_TWO and len(ADMITTED)==17
     spec=json.loads(runner.SPEC.read_text())
     for node in ('analysis','resolve','analysis_shape','resolved_shape'):
         schema=spec['nodes'][node]['config']['reply_schema']

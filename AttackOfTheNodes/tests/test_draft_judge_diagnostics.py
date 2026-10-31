@@ -121,13 +121,13 @@ def test_prepared_real_calibrate_only_with_mock_sdk(tmp_path, monkeypatch, all_f
     for record in (report, calibration):
         assert record["judge_model"] == "claude-sonnet-5-5"
         assert record["judge_effort"] == "high"
-        assert record["model_calls"] == {"attempted": 64, "succeeded": 64}
+        assert record["model_calls"] == {"attempted": 72, "succeeded": 72}
         assert record["estimated_cost_usd"] > 0
     assert report["estimated_cost_usd"] == pytest.approx(calibration["estimated_cost_usd"])
     assert report["case_count"] == 0 and report["cases"] == []
     assert not (run / "cases").exists()
     assert not list((root / "library").iterdir())
-    assert not mock.replies and len(mock.calls) == 64
+    assert not mock.replies and len(mock.calls) == 72
     for row, call in zip(calibration["fixtures"], mock.calls):
         question = run / "calibration" / row["fixture"] / (row["variant"] + "-judge-question.txt")
         contracts = json.loads((run / "calibration" / row["fixture"] / "contracts.json").read_text())["text"]

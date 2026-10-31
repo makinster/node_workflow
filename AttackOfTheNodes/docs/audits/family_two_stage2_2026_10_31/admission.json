@@ -1,0 +1,46 @@
+{
+  "base_revision": "b52ed36",
+  "real_api_calls": 0,
+  "admission_versions": {"admission": 3, "role_schema": 3, "contracts": 3, "cache": 3, "draft_stage": 2},
+  "evaluator_policy": "family-2-evaluator-4",
+  "caps": {"contracts": 50000, "context": 100000, "full_catalogue": 64000, "reply": 8000},
+  "contracts": {
+    "helpers_15": {"Brief": 8855, "Compact": 27536},
+    "stage_1_16": {"Brief": 9692, "Compact": 30376},
+    "stage_2_17": {"Brief": 10340, "Compact": 32591}
+  },
+  "prompts": {
+    "analysis_question": {"stage_2": 5136, "stage_1": 4915, "frozen": 4669},
+    "resolve_question": {"stage_2": 4947, "stage_1": 4726, "frozen": 4480},
+    "draft_question": {"stage_2": 3438, "stage_1": 2492, "frozen": 1762},
+    "retry_question": {"stage_2": 463, "stage_1": 463, "frozen": 463},
+    "judge_question": {"stage_2": 2883, "stage_1": 2883, "frozen": 2883}
+  },
+  "selected_snapshot_characters": {"F2-01": 13815, "F2-02": 14929, "F2-03": 15088, "F2-04": 16168, "F2-05": 16913},
+  "largest_mock_call_characters": {
+    "F2-01": {"analysis": 16847, "draft": 18744, "judge": 19665},
+    "F2-02": {"analysis": 17042, "draft": 20448, "judge": 21935},
+    "F2-03": {"analysis": 16993, "draft": 20518, "judge": 21892},
+    "F2-04": {"analysis": 16855, "draft": 21316, "judge": 22284},
+    "F2-05": {"analysis": 16961, "draft": 22467, "judge": 23850}
+  },
+  "check_report_characters": {
+    "F2-01": {"judge_sees": 369, "whole": 6486},
+    "F2-02": {"judge_sees": 668, "whole": 9085},
+    "F2-03": {"judge_sees": 380, "whole": 9389},
+    "F2-04": {"judge_sees": 369, "whole": 7012},
+    "F2-05": {"judge_sees": 390, "whole": 8447}
+  },
+  "replay": {
+    "000050_case_set_4": {
+      "main": {"set_4": "2/2", "same": 1, "newly_passing": 1, "newly_failing": 0, "diverged": 0, "calibration": {"same_outcome": 64, "diverged": 0}, "result": "pass"},
+      "this_branch": {"set_4": "2/2", "same": 1, "newly_passing": 1, "newly_failing": 0, "diverged": 0, "calibration": {"same_outcome": 64, "diverged": 8}, "result": "fail"}
+    },
+    "000048_case_set_all": {
+      "main": {"sets": {"1": "10/10", "2": "10/10", "3": "3/4", "4": "1/2"}, "same": 26, "diverged": 0, "calibration": {"same_outcome": 64, "diverged": 0}, "result": "fail"},
+      "this_branch": {"sets": {"1": "10/10", "2": "10/10", "3": "3/4", "4": "1/2"}, "same": 26, "diverged": 0, "calibration": {"same_outcome": 64, "diverged": 8}, "result": "fail"}
+    }
+  },
+  "engine_stage_2": {"result": "pass", "start_attempts": 120, "finished": 104, "refused_at_startup": 16},
+  "mock_all_sets": {"result": "pass", "fully_right": {"1": 10, "2": 10, "3": 4, "4": 5}, "fixture_runs": 73, "mock_calls": 157}
+}
