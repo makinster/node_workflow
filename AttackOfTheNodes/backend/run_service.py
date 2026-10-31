@@ -196,7 +196,8 @@ class RunService:
         return resolve_workflow_data(reference)
 
     def validate(self) -> Dict[str, Any]:
-        return validate_workflow(self._workflow_map, self._factory, self._secrets_manager)
+        return validate_workflow(self._workflow_map, self._factory, self._secrets_manager,
+                                 max_branch_depth=int(self._configuration.get("max_branch_depth")) if self._configuration else None)
 
     # -- run control -------------------------------------------------------------
 

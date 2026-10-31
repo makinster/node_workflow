@@ -23,6 +23,19 @@ Sets 1–3 keep their pinned designer text; no pins or guidance changed.
 Full suite: **5,239 passed / 187 skipped**; no API calls.
 [Verification and retry sizes](audits/plain_shared_check_2026_10_31/README.md).
 
+## Family 2 checker repairs (2026-10-31)
+
+On `codex/family-two-checker-fixes`, based on main `784df48`: loop findings no
+longer suppress independent Wait checks; shared analysis enforces the effective
+branch nesting limit, resets that budget after Merge, and rejects provably
+unconnected Merge-slot template references on direct Text Output/Concat
+consumers. Recovery rejoins use shared success/error exclusivity for branch
+health. Normal startup and local structural-redraft regressions pass; no runtime
+pause code, palette, admission or trial-tool changes. All 17 bundled graphs have
+unchanged verdicts: **zero newly refused**. Receipts are locally rechecked,
+not independently human-attested. Full suite: **5,282 passed / 187 skipped**. No API/model calls.
+[Verification and compatibility](audits/family_two_checker_fixes_2026_10_31/README.md).
+
 ## Family 2 Stage 2 admission (2026-10-31)
 
 Drafts can now use a path that splits again with its children joining the same Merge,

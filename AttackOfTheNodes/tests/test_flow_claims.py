@@ -23,7 +23,7 @@ RECEIPT=ROOT/'docs/audits/family_two_records_2026_10_31/claims.json'
 
 def source_hashes():
     import hashlib
-    paths={'tests/test_flow_claims.py','tests/flow_claim_scenarios.py','tests/flow_engine_scenarios.py',
+    paths={'tests/test_family_two_checker_fixes.py','tests/test_flow_claims.py','tests/flow_claim_scenarios.py','tests/flow_engine_scenarios.py',
            'tests/test_merge_arrival_runtime.py','tests/test_merge_plan_integration.py','tests/test_flow_startup_refusals.py',
            'tests/test_payload_plan_integration.py','tests/test_wait_until_reachability.py',
            'backend/flow_behaviors.py','backend/master_state.py','backend/supervisor.py',

@@ -319,13 +319,13 @@ def describe_node_type(
 # --- build -----------------------------------------------------------------------------
 
 
-def check_workflow_spec(factory: NodeFactory, spec: Any) -> Dict[str, Any]:
+def check_workflow_spec(factory: NodeFactory, spec: Any, *, max_branch_depth: int | None = None) -> Dict[str, Any]:
     """The authoring verdict only: no saves, execution or active-map edits.
 
     Ephemeral ids in this low-level report are check internals, not library ids.
     The workflow node returns the parsed input spec instead of these internals.
     """
-    report, _ = _checked_graph(factory, spec)
+    report, _ = _checked_graph(factory, spec, max_branch_depth=max_branch_depth)
     return report
 
 
@@ -356,7 +356,7 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
     return {**report, "path": str(persistence.WORKFLOWS_DIR / f"{workflow_id}.json")}
 
 
-def _checked_graph(factory: NodeFactory, spec: Any):
+def _checked_graph(factory: NodeFactory, spec: Any, *, max_branch_depth: int | None = None):
     """One validation path shared by CLI checks, saving builds and the node."""
     diagnostics: List[Dict[str, Any]] = []
 
@@ -433,7 +433,7 @@ def _checked_graph(factory: NodeFactory, spec: Any):
         workflow_map.connect(ids[source], source_port, ids[target], target_port)
 
     handles = {node_id: handle for handle, node_id in ids.items()}
-    flow = _add_validation(workflow_map, factory, handles, add, diagnostics)
+    flow = _add_validation(workflow_map, factory, handles, add, diagnostics, max_branch_depth=max_branch_depth)
     if any(d["level"] == "error" for d in diagnostics):
         return report(False, flow_analysis=flow), None
     return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids, flow_analysis=flow), workflow_map
@@ -532,11 +532,11 @@ def _translated_references(value: Any, ids: Dict[str, str], handle: str, field: 
 
 
 def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Dict[str, str],
-                    add, diagnostics: List[Dict[str, Any]]) -> None:
+                    add, diagnostics: List[Dict[str, Any]], *, max_branch_depth: int | None = None) -> None:
     """Validator issues as diagnostics (a bad number the spec check already
     reported for a node is not repeated)."""
     reported = {(d["code"], d["node"]) for d in diagnostics if d["code"] == "invalid_number"}
-    result = validate_workflow(workflow_map, factory, draft=True)
+    result = validate_workflow(workflow_map, factory, draft=True, max_branch_depth=max_branch_depth)
     for level, issues in (("error", result["errors"]), ("warning", result["warnings"])):
         for issue in issues:
             code = str(issue.get("code") or "validation")

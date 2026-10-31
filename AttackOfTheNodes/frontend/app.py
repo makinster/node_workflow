@@ -430,6 +430,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         self._materialize_editor_deleted_nodes()
         result = validate_workflow(
             self.workflow_map, self.factory, secrets_manager=self.secrets_manager,
+            max_branch_depth=int(self.configuration_manager.get("max_branch_depth")) if self.configuration_manager else None,
         )
         if result["errors"]:
             if isinstance(self.screen, EditorScreen):

@@ -60,3 +60,15 @@ add('W2','test_wait_until_fails_when_its_target_errors_and_its_branch_is_termina
 for kind,greeting in [('escape','yes'),('escape','no'),('omitted','yes'),('omitted','no'),('impossible','yes'),('missing','yes')]:
     add('G2','test_app_style_start_refuses_flow_error_without_a_run',module='test_flow_startup_refusals',kind=kind,greeting=greeting)
 add('G2','test_escaping_child_is_a_typed_subworkflow_error',module='test_flow_startup_refusals')
+
+# Shared checker repairs: automatic coordinator plans, no injected barriers.
+for function in ['test_self_wait_with_disconnected_loop_refuses_normal_startup',
+                 'test_valid_wait_still_runs_with_disconnected_loop',
+                 'test_connected_slot_with_missing_value_is_not_statically_refused']:
+    add('G2',function,module='test_family_two_checker_fixes')
+for kind in ['text_output_node','concat_node']:
+    add('M1','test_valid_direct_merge_templates_run',module='test_family_two_checker_fixes',kind=kind)
+for fails in [False,True]:
+    add('G1','test_success_and_recovery_rejoin_with_valid_health_and_real_run',module='test_family_two_checker_fixes',fails=fails)
+add('B1','test_limit_boundary_real_run_and_live_service_validation',module='test_family_two_checker_fixes')
+add('B1','test_sequential_merges_reset_depth_in_analysis_and_runtime',module='test_family_two_checker_fixes')

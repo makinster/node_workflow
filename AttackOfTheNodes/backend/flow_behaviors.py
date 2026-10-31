@@ -2,13 +2,16 @@
 
 This module owns type bindings. Consumers dispatch on Kind, never on node names.
 Reports describe potential arrivals, not runtime receipts or guaranteed payloads.
-No mutable execution state, model calls, or persistence belongs here.
+No mutable execution state or model calls belong here. Callers pass effective
+limits; direct legacy callers resolve the persisted setting once at entry.
 """
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from itertools import combinations
+import re
+from string import Formatter
 from typing import Any, Literal, Mapping
 
 from .branch_paths import ALL_PATH_PORTS, path_index
@@ -134,6 +137,24 @@ def resolve_flow(node: Mapping[str, Any], factory=None) -> FlowProfile:
                        input_ports=inputs)
 
 
+def control_routes(node: Mapping[str, Any], profile: FlowProfile):
+    """First wire per active output, including exclusive error recovery."""
+    first = {}
+    active = {port for batch in profile.batches for port in batch} | {"error"}
+    for conn in node.get("connections", {}).get("outputs", []):
+        port = str(conn.get("source_port") or "default")
+        if port in active and port not in first:
+            first[port] = (port, conn.get("target_node_id"), str(conn.get("target_port") or "input"))
+    return sorted(first.values(), key=lambda edge: port_order(edge[0]))
+
+
+def exclusive_routes(profile: FlowProfile, outgoing) -> set[str]:
+    """Success and a wired error route are alternatives, as are route choices."""
+    if profile.exclusive or "error" in outgoing:
+        return {port for batch in profile.batches for port in batch} | ({"error"} if "error" in outgoing else set())
+    return set()
+
+
 @dataclass(frozen=True)
 class Finding:
     level: str
@@ -200,13 +221,18 @@ def _compatible(a: Arrival, b: Arrival) -> bool:
 
 
 def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = False,
-                 max_states: int = 20000) -> FlowAnalysis:
-    """Shared app/authoring/drafter/trial entry point; bounded, deterministic, pure.
+                 max_states: int = 20000, max_branch_depth: int | None = None) -> FlowAnalysis:
+    """Shared app/authoring/drafter/trial entry point; bounded and deterministic for explicit settings.
 
     Draft mode adds admission gates. App mode preserves standalone joins, but
     rejects unproved/repeated collecting shapes before execution.
     Unknown payload presence is explicit; index-based resource labels are not certified.
     """
+    if max_branch_depth is None:
+        # Compatibility for raw coordinator callers. Validation services pass
+        # their live limit explicitly, including unsaved settings overrides.
+        from .configuration_manager import ConfigurationManager
+        max_branch_depth = int(ConfigurationManager().get("max_branch_depth"))
     # Explicit full-or-error limit keeps both control and dependency graph
     # traversals below Python's recursion bound; no obligations are truncated.
     if len(all_nodes) > 512:
@@ -222,16 +248,11 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
     name = lambda nid: str(all_nodes[nid].get("alias") or nid)
     # The engine follows the first wire on each fired output, not every wire.
     edges: dict[str, list[tuple[str, str, str]]] = {}
+    incoming_edges = {nid: [] for nid in profiles}
     for nid, data in all_nodes.items():
-        first = {}
-        for conn in data.get("connections", {}).get("outputs", []):
-            port = str(conn.get("source_port") or "default")
-            if port not in first:
-                first[port] = (port, conn.get("target_node_id"), str(conn.get("target_port") or "input"))
-        active = {port for batch in profiles[nid].batches for port in batch}
-        edges[nid] = [edge for port, edge in first.items()
-                      if (port in active or port == "error") and edge[1] in profiles]
-        edges[nid].sort(key=lambda e: port_order(e[0]))
+        edges[nid] = [edge for edge in control_routes(data, profiles[nid]) if edge[1] in profiles]
+        for port, target, slot in edges[nid]:
+            incoming_edges[target].append((nid, port, slot))
 
     def reachable(start, stop=None):
         seen, stack = set(), [start]
@@ -270,8 +291,10 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
         for source, target in report.back_edges:
             findings.append(Finding("error" if draft else "warning", "flow_loop", source,
                                     "loops are not supported in drafts yet", (source, target)))
-        return report
 
+    # Remove only DFS feedback edges from the bounded structural walk. Keep
+    # the full control graph for diagnostics/dependencies and reachability.
+    back_edges = set(report.back_edges)
     # Trace structural visits, retaining fork lineage and exclusive route guards.
     # A join closes the current group. Keep a path-local closed-join marker
     # until another fork opens a fresh group, without another graph traversal.
@@ -316,6 +339,13 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             if root and lineage and lineage[0][0] == root:
                 ends.setdefault(root, []).append(name(nid))
         if profile.kind == Kind.FORK:
+            depth = len(lineage) + 1
+            if any(port != "error" for port, _, _ in edges[nid]) and depth > max_branch_depth:
+                finding = Finding("error", "branch_depth_exceeded", nid,
+                    f'Branch "{name(nid)}" needs nesting depth {depth}, but the limit is {max_branch_depth}. '
+                    "Reduce the nested splits or increase the branch depth limit.")
+                if finding not in findings:
+                    findings.append(finding)
             if root is None:
                 closed_join = None
             root = root or nid
@@ -334,10 +364,12 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                 if member not in group["members"]:
                     group["members"].append(member)
         for port, target, slot in reversed(edges[nid]):
+            if (nid, target) in back_edges:
+                continue
             next_guards = guards
             # Error recovery is exclusive with successful execution, and may
             # not silently escape an expected join. Unhandled errors are not routes.
-            if profile.exclusive or any(e[0] == "error" for e in edges[nid]):
+            if exclusive_routes(profile, {e[0] for e in edges[nid]}):
                 # The same saved router may execute on concurrent supervisors.
                 # Exclusivity belongs to a structural visit, not the saved ID.
                 guard_id = nid + "@" + "/".join(f"{fork}.{p}" for fork, p in lineage)
@@ -397,8 +429,9 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             if not any(reaches.values()):
                 continue
             alternatives = {p for batch in profile.batches for p in batch}
-            if profile.exclusive or "error" in outgoing:
-                bad = [p for p in alternatives | ({"error"} if "error" in outgoing else set()) if not reaches.get(p)]
+            choices = exclusive_routes(profile, outgoing)
+            if choices:
+                bad = [p for p in choices if not reaches.get(p)]
                 for port in sorted(bad, key=port_order):
                     slots = tuple(sorted({a.slot for a in merge.arrivals
                                           if any(f.split("@", 1)[0] == nid for f, _ in a.guards)}, key=port_order))
@@ -442,6 +475,37 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
         parts.extend(f"{ending} ends; supplies no Merge value." for ending in merge.independent_ends)
         merge.summary = " ".join(parts)
 
+    # Only certify a direct whole-record input. Multiple possible input
+    # sources, Vault selection and standalone pass-through are not proofs.
+    for nid, node in all_nodes.items():
+        if node.get("type") not in {"text_output_node", "concat_node"}:
+            continue
+        config = node.get("config") or {}
+        if node.get("type") == "text_output_node" and (config.get("input_source", "Upstream payload") != "Upstream payload" or config.get("request_user_input")):
+            continue
+        incoming = [(source, port) for source, port, slot in incoming_edges[nid] if slot == "input"]
+        if len(incoming) != 1:
+            continue
+        source, port = incoming[0]
+        merge = merges.get(source)
+        if port != "default" or merge is None or not merge.group_roots or merge.shape_status != "proved":
+            continue
+        template = config.get("template", "{input}")
+        if not isinstance(template, str):
+            continue
+        try:
+            fields = [field for _, field, _, _ in Formatter().parse(template) if field is not None]
+        except ValueError:
+            continue
+        for field_name in dict.fromkeys(fields):
+            match = re.match(r"^input\[(path_[a-z]+)\](?:$|[.\[])", field_name)
+            if match and match[1] not in merge.slots:
+                slot = match[1]
+                findings.append(Finding("error", "merge_slot_unconnected", nid,
+                    f'Merge "{name(source)}" input {slot} is not connected. '
+                    f'Use a connected slot in the template for "{name(nid)}", or connect {slot}.',
+                    (source, nid), slot, repair="Use a connected Merge slot or connect the missing input."))
+
     for mid, merge in merges.items():
         for arrival in merge.arrivals:
             report.dependencies.append({"source": arrival.source_id, "target": mid,
@@ -463,15 +527,19 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                 continue
             dependencies[target].add(nid)
             report.dependencies.append({"source": target, "target": nid, "event": "node_completed_once", "pass": 1})
-            if target == nid or target in reachable(nid):
+            if target == nid or (target in reachable(nid) and nid not in reachable(target)):
                 findings.append(Finding("error", "impossible_wait", nid,
                     f'Wait "{name(nid)}" depends on {"itself" if target == nid else "downstream node " + name(target)}.',
                     (nid, target), repair="Wait for a preceding node or an independently running path."))
-            elif any(p.entry for p in profiles.values()) and contexts[nid] and not contexts[target]:
+            elif any(p.entry for p in profiles.values()) and contexts[nid] and not any(
+                    target in reachable(entry) for entry, profile in profiles.items() if profile.entry):
                 findings.append(Finding("error", "impossible_wait", nid,
                     f'Wait "{name(nid)}": target "{name(target)}" cannot run on an active control path.',
                     (nid, target), repair="Connect the target to an active path, or remove the wait."))
-            elif contexts[nid] and contexts[target]:
+            elif contexts[nid] and contexts[target] and not any(
+                    nid in reachable(source) or target in reachable(source) for source, _ in report.back_edges):
+                # A disconnected control loop cannot hide this check. Only
+                # contexts downstream of feedback edges are unproved visits.
                 # A target behind a mutually exclusive route is not guaranteed.
                 safe = all(any(all(k in dict(wg) and dict(wg)[k] == v for k, v in tg)
                                    for _, _, tg in contexts[target]) for _, _, wg in contexts[nid])
@@ -502,7 +570,8 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                 if member == nid:
                     break
             waits = [m for m in members if profiles[m].kind == Kind.WAIT]
-            if len(members) > 1 and waits and not any(f.code == "impossible_wait" and f.node_id in members for f in findings):
+            control_cycle = any(a in members and b in members for a, b in report.back_edges)
+            if len(members) > 1 and waits and not control_cycle and not any(f.code == "impossible_wait" and f.node_id in members for f in findings):
                 findings.append(Finding("error", "impossible_wait", sorted(waits)[0],
                     "Impossible completion wait cycle: " + ", ".join(name(m) for m in sorted(members)) + ".",
                     tuple(sorted(members)), repair="Remove a completion dependency from this cycle."))

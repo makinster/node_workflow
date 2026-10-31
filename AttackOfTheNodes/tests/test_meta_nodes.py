@@ -162,8 +162,8 @@ async def test_no_success_writes_even_when_cancelled_after_check(spec, monkeypat
     node, ctx, memory, done, errors = runner('check_workflow_spec_node',
         dict(vault_write=True, vault_write_key='out'), json.dumps(spec))
     real = authoring.check_workflow_spec
-    def cancel(*args):
-        result = real(*args)
+    def cancel(*args, **kwargs):
+        result = real(*args, **kwargs)
         asyncio.current_task().cancel()
         return result
     monkeypatch.setattr(authoring, 'check_workflow_spec', cancel)

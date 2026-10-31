@@ -568,7 +568,7 @@ def evidence_hashes():
         'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py','backend/port_types.py',
         'backend/master_state.py','backend/run_context.py','tests/test_merge_arrival_runtime.py',
         'tests/test_merge_plan_integration.py','backend/subworkflow_calls.py',
-        'tests/test_flow_claims.py','tests/flow_claim_scenarios.py','tests/flow_engine_scenarios.py','tests/test_family_two_records.py',
+        'tests/test_family_two_checker_fixes.py','tests/test_flow_claims.py','tests/flow_claim_scenarios.py','tests/flow_engine_scenarios.py','tests/test_family_two_records.py',
         'backend/node_metadata.py','backend/saved_values.py','backend/meta_workflow.py',
         'backend/node_catalogue.py','backend/palette_selection.py',
         'tests/test_helper_family_admission.py','tests/test_helper_family_followup.py',

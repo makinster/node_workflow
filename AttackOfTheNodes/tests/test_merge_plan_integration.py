@@ -346,8 +346,10 @@ async def test_real_nesting_beyond_default_depth_still_refuses_the_whole_batch()
         end=e.add('end_node',record_line=False);e.wire(fork,end,'path_b')
         previous=fork
     last=e.add('text_output_node',label='',template='must not run');e.wire(previous,last,'path_a')
-    await start(e);await e.finish()
-    assert len(e.errors())==1 and e.errors()[0]['node_id']==forks[-1]
-    assert e.errors()[0]['code']=='branch_depth_exceeded'
-    assert max(r['depth'] for r in e.registered)==5 and not e.done(last)
+    result = validate_workflow(e.wm, e.factory)
+    assert any(x['code'] == 'branch_depth_exceeded' and x['node_id'] == forks[-1]
+               for x in result['errors'])
+    with pytest.raises(MergePlanError, match='nesting depth 6'):
+        await e.master.start_workflow(unattended='terminate_branch')
+    assert not e.registered and e.master.run_context is None
     assert not e.master.run_outputs

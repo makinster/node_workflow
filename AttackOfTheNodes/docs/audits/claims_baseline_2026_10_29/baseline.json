@@ -571,7 +571,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/check_workflow_spec_node.py",
-      "source_sha256": "28b12338e73ec03ddf6ce5119c96452f0be01f4d2c2b861b5b27c0d100c45af3",
+      "source_sha256": "f302b4cf3377fe89036c212f481a1b57f7cb47e74de623e297ba72957d312601",
       "inputs": {
         "input": {
           "name": "Spec",

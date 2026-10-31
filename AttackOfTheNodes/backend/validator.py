@@ -56,6 +56,8 @@ _FLOW_ISSUE_TEMPLATES = {issue["code"]: issue for issue in (
     {"code": "wait_target_needs_review", "message": ""},
     {"code": "flow_loop", "message": ""},
     {"code": "flow_needs_review", "message": ""},
+    {"code": "branch_depth_exceeded", "message": ""},
+    {"code": "merge_slot_unconnected", "message": ""},
     {"code": "repeated_join_unsupported", "message": ""},
 )}
 
@@ -173,7 +175,7 @@ def validate_workflow(
     workflow_map: WorkflowMap,
     factory: NodeFactory,
     secrets_manager: Optional["SecretsManager"] = None,
-    *, draft: bool = False,
+    *, draft: bool = False, max_branch_depth: int | None = None,
 ) -> Dict[str, Any]:
     """Validate the loaded workflow structure."""
     errors: List[Dict[str, str]] = []
@@ -758,7 +760,7 @@ def validate_workflow(
     _check_contract(all_nodes, factory, bool(getattr(workflow_map, "callable", False)),
                     errors, warnings)
 
-    flow = analyze_flow(all_nodes, factory, draft=draft)
+    flow = analyze_flow(all_nodes, factory, draft=draft, max_branch_depth=max_branch_depth)
     for finding in flow.findings:
         # An ignored ordinary fan-out already explains an ambiguous hand-built
         # fragment. Preserve that diagnostic rather than adding a speculative

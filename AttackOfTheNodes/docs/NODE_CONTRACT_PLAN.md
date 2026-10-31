@@ -15,6 +15,12 @@ plain top-level findings/repairs and reviewer-sized routed failures. Full analys
 still reaches the draft-stage gate; refusal policy and sets 1–3 pins are unchanged.
 [Mock repair verification](audits/plain_shared_check_2026_10_31/README.md).
 
+Family-2 checker follow-up (2026-10-31), from main `784df48`: four reviewed
+checker gaps repaired: loop-independent Wait diagnostics, effective nesting
+limits using the existing lineage walk, certain direct Merge-slot template
+checks, and recovering-route branch health. No family admission or runtime
+pause changes. [Evidence and bundled comparison](audits/family_two_checker_fixes_2026_10_31/README.md).
+
 Family-2 block 3 (2026-10-31, from merged main `58a2299`): final Merge/Wait
 records, corrected editor Beacon and real-engine claim receipts implemented for
 review; no admission or Set/Get changes. Merge now restores its opening Branch
