@@ -38,6 +38,7 @@ from .output_manager import OutputManager
 from .run_context import (RunContext, Delivery, MergePlan, MergeBarrier,
                           MergeArrival, BranchGroup, GroupMember, BranchLaunch)
 from .node_errors import NodeError
+from .flow_behaviors import analyze_flow, merge_plans_from_analysis
 from .branch_paths import path_index, path_port
 from .run_history import RunHistory
 from .run_session import RunSession
@@ -257,7 +258,7 @@ class MasterState:
             input_provider = input_provider or default_provider
         async with self._start_lock:
             return await self._start_workflow_locked(
-                unattended, recovery_policy, input_provider, dict(inputs or {}), dict(merge_plans or {})
+                unattended, recovery_policy, input_provider, dict(inputs or {}), None if merge_plans is None else dict(merge_plans)
             )
 
     async def _start_workflow_locked(
@@ -266,7 +267,7 @@ class MasterState:
         recovery_policy: Optional[RecoveryPolicy],
         input_provider: Optional[InputProvider],
         inputs: Dict[str, Any],
-        merge_plans: Dict[str, MergePlan],
+        merge_plans: Optional[Dict[str, MergePlan]],
     ) -> bool:
         if not self._workflow_map.is_loaded:
             logger.error("Cannot start: no workflow loaded")
@@ -279,7 +280,10 @@ class MasterState:
 
         # Contract inputs (Step 4a) are filled before anything is reset, so
         # a run with missing or invalid inputs never starts (C10).
-        start_data = self._workflow_map.get_node_data(start_node_id) or {}
+        workflow = self._workflow_map.get_workflow_data_for_save()
+        if merge_plans is None:
+            merge_plans = merge_plans_from_analysis(analyze_flow(workflow["nodes"], self.factory))
+        start_data = workflow["nodes"].get(start_node_id) or {}
         resolved_inputs = resolve_inputs(
             start_rows(start_data.get("config") or {}), inputs,
             strict=self._workflow_map.callable,
@@ -309,7 +313,7 @@ class MasterState:
             input_provider=input_provider,
             inputs=inputs,
             resolved_inputs=resolved_inputs,
-            revision=workflow_revision(self._workflow_map.get_workflow_data_for_save()),
+            revision=workflow_revision(workflow),
             started_at=datetime.now(timezone.utc).isoformat(),
             merge_plans=merge_plans,
         )

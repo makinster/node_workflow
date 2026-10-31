@@ -51,13 +51,17 @@ arrival continues once, and failure/End/Stop have distinct outcomes. Beacon
 wiring helpers stay; the value selector is removed. Terminal absorption retires
 only that arrival's display status. No metadata claim or admission changed.
 
-**Integration boundary:** explicit graph fixtures pass `MergePlan` declarations
-to `start_workflow`. Block 2's shared analysis still needs to supply them for app
-runs. No cardinality is guessed: split-group Merge without a declaration reports
-`merge_shape_unknown`. No validator, graph analyser, picker, palette or trial
-code is changed. See [runtime evidence and changed tests](audits/merge_runtime_2026_10_30/README.md)
-and [runtime interface](ARCHITECTURE.md#waits-and-merges). Full suite: **4,853 passed, 187 skipped in 47.16 s**, zero xfails; no real API
-or model calls.
+PR #164 follow-up rebases onto `5839bfe` (#162/#163). Normal startup now derives
+`MergePlan` declarations from the run's captured workflow through the shared
+flow owner, covering the app, saved RunService workflows and subworkflow child
+maps. The 57 explicit-plan engine tests remain, plus 22 normal-startup cases.
+Independent side-path failures are excluded by producer lineages. Unproved and
+repeated join shapes now fail app validation before running: a bypassed two-Merge
+graph proved the second join passed through the first record unchanged.
+No metadata claim, admission or trial code changed. See
+[runtime evidence and changed tests](audits/merge_runtime_2026_10_30/README.md)
+and [runtime interface](ARCHITECTURE.md#waits-and-merges). Full `pytest -n auto`: **4,968 passed, 187 skipped in 46.97 s**, zero xfails;
+no real API or model calls.
 
 ## First helper family — 2026-10-30 (Important)
 

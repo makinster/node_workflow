@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "base_revision": "f57f4ed6d646ed9f1bf733c415d98792f171369e",
+  "base_revision": "5839bfe273a461dafa0702b9fe7a3aa49bc47c38",
   "date": "2026-10-30",
   "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy; collecting Merge runtime dependency recheck on 2026-10-30 (no admission change)",
   "registered_count": 59,

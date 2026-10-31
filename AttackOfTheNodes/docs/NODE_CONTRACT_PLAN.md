@@ -12,8 +12,10 @@ reproduction first; the audit gives one for each.
 
 Family-2 records plan, runtime **block 1** (owner-approved revision 1,
 2026-10-30): decisions 1–6 and R1 implemented on `codex/merge-arrival-runtime`
-from `f57f4ed`. Real-engine fixtures supply slot/participant facts; shared graph
-analysis and its app integration belong to block 2. Records/claims and admission
+from `f57f4ed`, rebased onto `5839bfe` (#162/#163). The follow-up connects
+the shared flow proof to automatic startup plans for the app, RunService and
+child workflows. Explicit fixtures remain; unproved/repeated joins are preflight
+errors rather than runnable warnings. Records/claims and admission
 remain pending, with no metadata text relaxed. See
 [runtime evidence](audits/merge_runtime_2026_10_30/README.md).
 

@@ -275,12 +275,12 @@ def test_disabled_legacy_branch_wire_does_not_create_pending_obligation():
     assert [a.path_name for a in merge.arrivals] == ['a']
 
 
-def test_repeated_group_joins_are_draft_only_gate():
+def test_repeated_group_joins_are_preflight_errors_in_app_and_drafts():
     nodes = reference()
     nodes['second'] = dict(type='merge_node',alias='second',config={},connections=dict(inputs=[],outputs=[]))
     wire(nodes,'end','default','second','path_a')
     nodes['end']['type'] = 'echo_node'
-    assert analyze_flow(nodes,FACTORY).success
+    assert "flow_needs_review" in errors(analyze_flow(nodes,FACTORY))
     assert 'repeated_join_unsupported' in errors(analyze_flow(nodes,FACTORY,draft=True))
 
 
@@ -365,3 +365,17 @@ def test_duplicate_path_labels_do_not_invent_equal_depth_winner():
     merge = analyze_flow(nodes,FACTORY).merges['combine']
     assert 'Continues as same.' not in merge.summary
     assert 'first arrival at the shallowest depth' in merge.summary
+
+
+def test_unproved_merge_shape_is_an_app_error_after_analysis_limits_or_loops():
+    nodes = reference()
+    bounded = analyze_flow(nodes, FACTORY, max_states=2)
+    assert not bounded.success and 'flow_needs_review' in errors(bounded)
+    wire(nodes, 'end', 'default', 'start')
+    nodes['end']['type'] = 'echo_node'
+    loop = analyze_flow(nodes, FACTORY)
+    assert not loop.success and 'flow_needs_review' in errors(loop)
+    oversized = graph({f'n{i}': 'no_op_node' for i in range(513)}, [])
+    assert analyze_flow(oversized, FACTORY).success  # Non-collecting app graphs unchanged.
+    oversized['n0']['type'] = 'merge_node'
+    assert not analyze_flow(oversized, FACTORY).success

@@ -17,19 +17,38 @@ depth refusal; fresh joins/runs and stale callbacks; numeric slots after z;
 Wait Until on Merge; duplicate notification and contradictory shape diagnostics.
 Vault/source integration also remains covered by the updated payload-plan graph.
 
-Graph facts are supplied via the run-scoped `MergePlan` interface documented in
-[Architecture](../../ARCHITECTURE.md#waits-and-merges). This is intentionally not
-a second production analyser. Until block 2 supplies those declarations, a
-split-group Merge in an ordinary app run reports `merge_shape_unknown` instead
-of guessing scalar/list or participant membership. No-group Merge passes through.
-No validator, graph-analysis module, node picker, palette selection or trial
-file changed. No records/admission added. Reviewed metadata text is unchanged;
-only dependency hashes and evidence receipts are re-attested.
+## Normal-startup follow-up (rebased onto `5839bfe`, #162/#163)
+
+The initial branch had no production plan supplier; that gap is fixed.
+`flow_behaviors.merge_plans_from_analysis` translates the existing shared proof
+(root fork, cardinality and producer lineages). Normal MasterState startup
+captures its own workflow, derives plans from that snapshot and records the same
+revision. This covers app, RunService and child-run callers without patches.
+Explicit plans remain supported; no second analyser or cardinality guess exists.
+No metadata/admission/trial changes. Runtime fingerprints and evidence are refreshed.
+
+`test_merge_plan_integration.py` adds **22 normal-startup real-engine cases**:
+reversed two-file collection; A/C/D hosts × direct/Beacon × separate/shared C/D
+slot; both exclusive outcomes; independent End/failure; saved RunService;
+subworkflow return record; two-Merge measurement/refusal; and fresh per-run
+snapshot/cardinality derivation. Existing 57 explicit-plan tests remain.
+`test_flow_behaviors.py` changes repeated-join app acceptance into an error
+expectation, and checks unproved collecting shapes at bounds/loops.
+
+**Two-Merge result:** with preflight deliberately bypassed and only the first
+join's proof supplied, both outputs were the identical original collected
+record. The second Merge failed to wrap/collect a new `path_a` record because
+the first winner had detached from its group. This is unsupported. The shared
+analysis now emits app errors for `needs_review` and repeated shapes, rather
+than warnings. A normal RunService start refuses that saved graph before
+creating a run; direct automatic startup cannot produce an unproved plan either.
+Standalone Merge still passes through, as documented.
 
 ## Verification
 
 Full-suite command: `python -m pytest -n auto -q` from the app directory.
-Final result: **4,853 passed, 187 skipped in 47.16 seconds**, zero xfails.
+Initial block result: **4,853 passed, 187 skipped**. Follow-up full-suite result:
+**4,968 passed, 187 skipped in 46.97 s**, zero xfails.
 No real API or model calls.
 The first full run exposed two stale fingerprints, a half-initialized Supervisor
 test, and an accidental failure-abort/user-Stop flag regression. All are fixed;

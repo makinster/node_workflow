@@ -268,5 +268,7 @@ The baseline source hashes for Branch and Merge are refreshed from `f57f4ed`.
 Reviewed record text and admission are unchanged. The receipt now also binds
 MasterState, RunContext and the real-engine Merge arrival tests; the reviewed
 ordinary source/Vault/forwarding graphs remain required. Merge remains pending
-metadata review and drafter admission. This runtime block uses explicit
-`MergePlan` fixtures; the shared graph-analysis integration is a separate block.
+metadata review and drafter admission. The original explicit
+`MergePlan` fixtures remain; the follow-up now derives normal-startup plans from
+the shared flow proof after rebasing onto #162/#163. Saved and child workflows
+are covered by normal-startup engine tests; unproved shapes fail preflight.

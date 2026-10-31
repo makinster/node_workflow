@@ -202,14 +202,14 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                  max_states: int = 20000) -> FlowAnalysis:
     """Shared app/authoring/drafter/trial entry point; bounded, deterministic, pure.
 
-    Draft mode adds unsupported-shape gates. App mode preserves standalone and
-    repeated hand-built joins, while still rejecting unsafe joins and deadlocks.
+    Draft mode adds admission gates. App mode preserves standalone joins, but
+    rejects unproved/repeated collecting shapes before execution.
     Unknown payload presence is explicit; index-based resource labels are not certified.
     """
     # Explicit full-or-error limit keeps both control and dependency graph
     # traversals below Python's recursion bound; no obligations are truncated.
     if len(all_nodes) > 512:
-        return FlowAnalysis({}, {}, [Finding("error" if draft else "warning", "flow_needs_review", "",
+        return FlowAnalysis({}, {}, [Finding("error" if draft or any(n.get("type") == MERGE_NODE_TYPE for n in all_nodes.values()) else "warning", "flow_needs_review", "",
                             "Flow graph exceeds the 512-node analysis limit; needs review.")], [], [])
     if factory is None:
         from .node_factory import NodeFactory
@@ -258,10 +258,14 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             if nid not in colour:
                 visit(nid)
     except RecursionError:
-        findings.append(Finding("error" if draft else "warning", "flow_needs_review", "",
+        findings.append(Finding("error" if draft or merges else "warning", "flow_needs_review", "",
                                 "Flow graph exceeds analysis depth; needs review."))
         return report
     if report.back_edges:
+        for mid, merge in merges.items():
+            merge.shape_status = "needs_review"
+            findings.append(Finding("error", "flow_needs_review", mid,
+                "Merge slot shapes in a control loop cannot be proved. Remove the loop before running this join."))
         for source, target in report.back_edges:
             findings.append(Finding("error" if draft else "warning", "flow_loop", source,
                                     "loops are not supported in drafts yet", (source, target)))
@@ -288,7 +292,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             continue
         seen.add(state)
         if len(seen) > max_states:
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", nid,
+            findings.append(Finding("error" if draft or merges else "warning", "flow_needs_review", nid,
                                     "Flow graph exceeds the analysis state bound; needs review."))
             return report
         contexts[nid].append((root, lineage, guards))
@@ -351,13 +355,13 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                                     repair="Place the Merge after parallel paths from a split."))
         if len(merge.group_roots) > 1 or (merge.group_roots and any(not a.lineage for a in merge.arrivals)):
             merge.shape_status = "needs_review"
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", mid,
+            findings.append(Finding("error", "flow_needs_review", mid,
                                     "Merge receives unrelated groups or an arrival outside its family; shape needs review."))
         prior_joins = [other for other in merges if other != mid and mid in reachable(other)]
         if prior_joins:
             merge.shape_status = "needs_review"
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", mid,
-                "Repeated joins retain their inherited family, but their arrival shape needs review."))
+            findings.append(Finding("error", "flow_needs_review", mid,
+                "Repeated Merges cannot collect a second result safely. Use one collecting Merge for these paths; repeated-join shapes are not supported yet."))
         for root in merge.group_roots:
             merge.handoffs.extend(h for h in handoffs.get(root, [])
                                   if h["node_id"] != root and mid in reachable(h["node_id"], mid))
@@ -535,3 +539,44 @@ def reached_with_open_family(all_nodes: Mapping[str, dict], target: str, factory
                 stack.append((nxt, opened))
                 used.add(port)
     return False
+
+
+def merge_plans_from_analysis(report: FlowAnalysis):
+    """Translate the shared graph proof into run-local collector declarations.
+
+    No graph traversal or observed-arrival inference belongs in this adapter.
+    Standalone joins retain runtime pass-through; unproved group shapes cannot
+    be represented as runnable plans.
+    """
+    from .run_context import MergePlan, MergeSlot
+
+    uncertain = next((f for f in report.findings if f.code == 'flow_needs_review' and f.level == 'error'), None)
+    if uncertain:
+        raise ValueError('Merge slot shape cannot be proved: ' + uncertain.message)
+    plans = {}
+    for mid, merge in report.merges.items():
+        if merge.shape_status != 'proved':
+            raise ValueError(f'Merge {mid}: its slot shape cannot be proved; reconnect the join before running.')
+        if not merge.group_roots:
+            continue
+        if len(merge.group_roots) != 1:
+            raise ValueError(f'Merge {mid}: unrelated split groups cannot share a collector.')
+        slots = {}
+        for slot, schema in merge.slots.items():
+            if schema['cardinality'] not in {'one', 'many'}:
+                raise ValueError(f'Merge {mid}, slot {slot}: its scalar/list shape needs review before running.')
+            producers = []
+            for arrival in schema['producers']:
+                lineage = []
+                for fork, port in arrival['lineage']:
+                    index = path_index(port)
+                    lineage.append(index if index is not None else report.profiles[fork].ports.index(port))
+                if not lineage:
+                    raise ValueError(f'Merge {mid}: a repeated join has no independent arrival lineage.')
+                if tuple(lineage) not in producers:
+                    producers.append(tuple(lineage))
+            if not producers:
+                raise ValueError(f'Merge {mid}, slot {slot}: no joining producer was proved.')
+            slots[slot] = MergeSlot(schema['cardinality'], tuple(producers))
+        plans[mid] = MergePlan(merge.group_roots[0], slots)
+    return plans

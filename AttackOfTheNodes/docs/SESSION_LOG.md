@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-30 — PR #164 normal-startup integration follow-up
+
+Rebased `codex/merge-arrival-runtime` onto `5839bfe` (#162/#163), retaining both
+workers' documentation and regenerating runtime dependency attestations. The
+initial block lacked a production supplier of Merge plans. One adapter beside
+`analyze_flow` now translates its root, scalar/list and producer-lineage proof.
+MasterState's normal startup derives plans from its own captured workflow and
+uses the same snapshot for its revision hash; explicit overrides still work.
+This fixes the app, saved RunService workflows and child maps without caller
+patches or another graph analyser. Independent side-path failures do not poison
+joining slots because their lineages are excluded from producer declarations.
+
+Added 22 normal-startup real-engine cases: reversed two-file collection, all
+A/C/D reference hosts with direct/Beacon and concurrent same-slot combinations,
+exclusive scalar rejoin, independent End/failure paths, saved RunService and
+subworkflow runs, fresh captured revisions, and the two-Merge regression.
+The bypassed two-Merge run confirmed that the second join passed through the
+first record without wrapping/collecting it. Shared preflight now errors on
+unproved/repeated shapes, bounds and collecting loops before a normal run.
+Full `pytest -n auto`: **4,968 passed, 187 skipped in 46.97 s**, zero xfails.
+The existing 57 explicit-plan cases remain. No metadata text, admission, trial
+or owner workflow edits; no real API/model calls. Final verification is recorded
+in [the runtime audit](audits/merge_runtime_2026_10_30/README.md).
+
 ## 2026-10-30 — Family 2 revision 1, block 2: shared graph analysis
 
 Branch `codex/shared-flow-analysis`, isolated worktree

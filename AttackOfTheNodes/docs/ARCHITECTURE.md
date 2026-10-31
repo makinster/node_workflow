@@ -201,11 +201,22 @@ structural path order, preserving nested lists. Outer slots use numeric path
 order. Missing/control-only values are omitted; null/false/zero/empty survive.
 No-group Merge passes the actual arriving value through.
 
-**Block 1 integration boundary:** declarations currently come from explicit
-graph fixtures. There is no runtime graph analyser or cardinality guess. A
-split-group Merge without a declaration fails clearly with `merge_shape_unknown`.
-Block 2 must connect its shared graph facts to this interface before ordinary
-app runs can use collecting joins. Branch depth refusal is delivered as an error
+Normal `start_workflow` calls now capture this run's workflow and use
+`flow_behaviors.analyze_flow` plus `merge_plans_from_analysis` to derive plans
+from that same snapshot used for the revision hash. The adapter only translates
+the shared proof; it does not traverse the graph or infer cardinality from
+arrivals. This covers the app, RunService and each subworkflow's own map.
+Explicit plan dictionaries still override automatic derivation, including an
+empty dictionary for unsupported-shape tests. Graph-declared producer lineages
+exclude independent side paths from the join, including their terminal failures.
+
+Unproved slot shapes, repeated joins, unrelated groups and collecting graphs
+beyond the analysis bounds are app-validation errors. An attempted direct start
+without a provable plan also fails before creating a run. A bypassed two-Merge
+same-family graph demonstrates why: the first winner detaches from its group,
+so the second join merely passes through the first record, rather than collecting
+again. Repeated shapes remain unsupported; they are no longer warnings that
+permit incorrect execution. Branch depth refusal is delivered as an error
 to Branch before any child launches. All coordination state retires per run;
 old-run callbacks cannot affect a new run's completion registry.
 
