@@ -22,6 +22,16 @@ ISSUE_CODES: Dict[str, str] = {
     "merge_beacon_unconnected": "A branch ends in a Merge Beacon that feeds no Merge.",
     "invalid_rows": "A configured row list has missing, repeated or invalid entries.",
     "vault_only_connection": "A Vault-only output cannot be connected downstream.",
+    # Shared flow preflight
+    "merge_outside_split": "Merge is outside a split and passes through its incoming value.",
+    "merge_required_path_escape": "A required joining path has a route away from its Merge.",
+    "merge_required_child_omitted": "A conditional split may omit a required Merge slot.",
+    "impossible_wait": "Control and completion dependencies form an impossible wait.",
+    "wait_target_missing": "Wait Until names a missing completion target.",
+    "wait_target_needs_review": "An exclusive route may prevent a Wait Until target from completing.",
+    "flow_loop": "A control back edge requires unsupported draft loop semantics.",
+    "flow_needs_review": "Flow shape cannot be proved within supported analysis limits.",
+    "repeated_join_unsupported": "Drafts permit one Merge per inherited group until repeated joins are tested.",
     # Ports and connections
     "undeclared_port": "A connection uses a port the node type does not have.",
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",

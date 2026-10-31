@@ -20,6 +20,11 @@ structure. Build the output-node-type set from factory metadata with
 
 from __future__ import annotations
 
+from .flow_behaviors import (  # legacy constants remain importable by port_types
+    BRANCH_NODE_TYPE, MERGE_NODE_TYPE, MERGE_BEACON_TYPE, END_NODE_TYPE,
+    DEFAULT_OUTPUT_NODE_TYPES, Kind, port_order, resolve_flow,
+)
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -27,15 +32,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 VALID = "valid"
 ENDED_UNMERGED = "ended_unmerged"
 FLOATING = "floating"
-
-BRANCH_NODE_TYPE = "branch_node"
-MERGE_NODE_TYPE = "merge_node"
-MERGE_BEACON_TYPE = "branch_end_node"
-END_NODE_TYPE = "end_node"
-
-# Node types that count as a valid output/end terminus when no factory is
-# supplied. ``merge_node`` and connected Merge Beacons are handled separately.
-DEFAULT_OUTPUT_NODE_TYPES: Set[str] = {"end_node", "text_output_node"}
 
 
 @dataclass(frozen=True)
@@ -87,15 +83,17 @@ def derive_branch_health(
         if output_node_types is not None
         else set(DEFAULT_OUTPUT_NODE_TYPES)
     )
+    from .node_factory import NodeFactory
+    factory = NodeFactory()
     results: List[BranchHealth] = []
     for branch_node_id in sorted(all_nodes):
         node = all_nodes[branch_node_id]
-        if node.get("type") != BRANCH_NODE_TYPE:
+        if resolve_flow(node, factory).kind != Kind.FORK:
             continue
         edges = _outgoing_edges(node)
-        for port, target_id in sorted(edges, key=lambda item: item[0]):
+        for port, target_id in sorted(edges, key=lambda item: port_order(item[0])):
             results.append(
-                _classify_branch(branch_node_id, port, target_id, all_nodes, outputs)
+                _classify_branch(branch_node_id, port, target_id, all_nodes, outputs, factory)
             )
     return results
 
@@ -121,6 +119,8 @@ def _classify_branch(
     target_id: Optional[str],
     all_nodes: Dict[str, Dict[str, Any]],
     outputs: Set[str],
+    factory: Any,
+    _visited: Optional[Set[str]] = None,
 ) -> BranchHealth:
     """Walk one branch path and classify its terminus."""
     if not target_id or target_id not in all_nodes:
@@ -128,33 +128,50 @@ def _classify_branch(
             branch_node_id, port, FLOATING, None, "branch_port_unconnected"
         )
 
-    visited: Set[str] = {branch_node_id}
+    visited: Set[str] = set(_visited or ()) | {branch_node_id}
     current_id: Optional[str] = target_id
     while current_id and current_id not in visited and current_id in all_nodes:
         visited.add(current_id)
         node = all_nodes[current_id]
         node_type = node.get("type")
+        behavior = resolve_flow(node, factory).kind
 
-        if node_type == MERGE_NODE_TYPE:
+        if behavior == Kind.JOIN:
             return BranchHealth(branch_node_id, port, VALID, current_id, "merged")
-        if node_type == MERGE_BEACON_TYPE:
-            if _connects_to_merge(node, all_nodes):
+        if behavior == Kind.BEACON:
+            if _connects_to_merge(node, all_nodes, factory):
                 return BranchHealth(
                     branch_node_id, port, VALID, current_id, "beacon_merged"
                 )
             return BranchHealth(
                 branch_node_id, port, ENDED_UNMERGED, current_id, "beacon_unmerged"
             )
-        if node_type in outputs and not (
-            node_type == "text_output_node" and _outgoing_edges(node)
-        ):
+        if behavior == Kind.FINISH or (node_type in outputs and not _outgoing_edges(node)):
             return BranchHealth(branch_node_id, port, VALID, current_id, "output_end")
-        if node_type == BRANCH_NODE_TYPE:
+        if behavior == Kind.FORK:
             # A nested split leads onward to structured sub-branches, which are
             # classified as their own entries; this path is not floating.
             return BranchHealth(
                 branch_node_id, port, VALID, current_id, "nested_branch"
             )
+
+        profile = resolve_flow(node, factory)
+        if profile.exclusive:
+            # Alternative routes do not spawn branches. Every alternative must
+            # have a healthy destination; keep Beacon handling in the same walk.
+            outgoing = dict(_outgoing_edges(node))
+            alternatives = {p for batch in profile.batches for p in batch}
+            route_health = [
+                _classify_branch(branch_node_id, port, outgoing.get(route), all_nodes,
+                                 outputs, factory, visited)
+                for route in sorted(alternatives, key=port_order)
+            ]
+            for health in route_health:
+                if health.state != VALID:
+                    return health
+            if route_health:
+                return BranchHealth(branch_node_id, port, VALID,
+                                    route_health[0].terminus_node_id, "alternative_routes_valid")
 
         next_id = _single_output_target(node)
         if next_id is None:
@@ -190,12 +207,12 @@ def _single_output_target(node: Dict[str, Any]) -> Optional[str]:
 
 
 def _connects_to_merge(
-    node: Dict[str, Any], all_nodes: Dict[str, Dict[str, Any]]
+    node: Dict[str, Any], all_nodes: Dict[str, Dict[str, Any]], factory: Any
 ) -> bool:
     """True when any outgoing edge targets a ``merge_node``."""
     for conn in node.get("connections", {}).get("outputs", []):
         target_id = conn.get("target_node_id")
         target = all_nodes.get(target_id) if target_id else None
-        if target and target.get("type") == MERGE_NODE_TYPE:
+        if target and resolve_flow(target, factory).kind == Kind.JOIN:
             return True
     return False
