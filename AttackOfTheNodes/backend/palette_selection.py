@@ -13,8 +13,9 @@ import re
 from .node_errors import NodeError
 
 # Admission is deliberately independent of metadata presence/catalogue visibility.
-ORIGINAL_PALETTE = frozenset('start_node end_node branch_end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
-ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path read_file write_file transform_text choose_path parallel_paths compose_text extract_json branch_beacon join persistent_state vault_state error_route'.split())
+# Merge Beacon (branch_end_node) is an editor join marker, deliberately not drafted.
+ORIGINAL_PALETTE = frozenset('start_node end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
+ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path read_file write_file transform_text choose_path parallel_paths compose_text extract_json join persistent_state vault_state error_route'.split())
 HELPERS = frozenset('find_lines_node read_lines_node check_reply_node context_pack_node'.split())
 ADMITTED = ORIGINAL_PALETTE | HELPERS
 MAX_IDS = 64
@@ -34,7 +35,7 @@ ROLE_TYPES = {
     'read_file': [('file_reader_node',)], 'write_file': [('file_output_node',)],
     'transform_text': [('text_transform_node',)], 'choose_path': [('conditional_node',)],
     'parallel_paths': [('branch_node',)], 'compose_text': [('concat_node',)],
-    'extract_json': [('json_path_node',)], 'branch_beacon': [('branch_end_node',)],
+    'extract_json': [('json_path_node',)],
     'join': [('merge_node',)], 'persistent_state': [('remember_node',)],
     'vault_state': [('concat_node',)], 'error_route': [('text_output_node',)],
 }
@@ -88,7 +89,7 @@ def exact_ids(factory, ids, *, allowed=ADMITTED):
             raise NodeError('selection_invalid', f'Duplicate type_id: {kind}.')
         seen.add(kind)
         meta = factory.metadata_for_type(kind)
-        if kind in HIDDEN_TYPES or meta.get('editor_only'):
+        if kind in HIDDEN_TYPES or meta.get('editor_only') or meta.get('dev_test_only'):
             raise NodeError('selection_invalid', f'Hidden type_id: {kind}.')
         if kind not in allowed or not meta.get('node_metadata'):
             raise NodeError('selection_invalid', f'Not admitted: {kind}.')
@@ -172,7 +173,7 @@ def positive_matches(factory, query, *, reviewed_only=True):
     for kind, cls in factory._node_registry.items():
         meta = factory.metadata_for_type(kind)
         record = meta.get('node_metadata')
-        if reviewed_only and not record:
+        if meta.get('dev_test_only') or (reviewed_only and not record):
             continue
         text = ' '.join([kind, cls.display_name, (record or {}).get('purpose', ''),
                          (record or {}).get('use_when', ''), *(meta.get('tags') or [])]).casefold()
@@ -185,6 +186,12 @@ def positive_matches(factory, query, *, reviewed_only=True):
         if score:
             hits.append((score, kind))
     return [kind for _, kind in sorted(hits, key=lambda p: (-p[0], p[1]))]
+
+
+def implemented_not_admitted(factory, allowed):
+    """Classification hints for the drafter: never dev/test-only or editor-only markers."""
+    return sorted(kind for kind in set(factory._node_registry) - allowed - {'tombstone_node', 'branch_end_node'}
+                  if not factory.metadata_for_type(kind).get('dev_test_only'))
 
 
 def registry_revision(factory):

@@ -179,6 +179,24 @@ recursive catalogue expansion. JSON consumers resolve admission separately.
 The four new records distinguish search numbers/excerpts/whole-file reading,
 validation/extraction and bounded redacted packs/exact templates.
 
+### Dev/test-only nodes and Merge Beacon (2026-10-30)
+
+Coverage is now a disjoint split: registered = reviewed records (16) | pending
+review (27) | dev/test only (16). `DEV_TEST_ONLY` in `node_metadata.py` is the
+one list; NodeFactory exports it as `dev_test_only: bool`, and every surface
+reads that flag. These types are out of the normal node picker and every drafter
+path (catalogue, Exact IDs, discovery hints), even with `include_debug`. They are
+deliberately not in `authoring.HIDDEN_TYPES`: old saved workflows still load,
+show and run, and claims scenarios still cover all 59 types. They get no record,
+and no `use_instead` link may name them. Sleep, Start/End, the drafter's own tools
+and the tombstone keep their earlier handling. `LIGHT_RECORD_TYPES` stays
+about record shape only.
+
+Merge Beacon (`branch_end_node`) is out of drafter admission: 11 original types
+plus 4 helpers makes 15 admitted types and 20 role IDs. It stays reviewed, in the
+editor and in the picker, and keeps its claims evidence. Set Variable and Get
+Variable stay unadmitted.
+
 Compact/Detailed Text repeat each node's standard-flag documentation and full
 Configured-source explanation after the PR #158 follow-up. These lines are
 intentional context for drafting and review; the shared standard/source legends

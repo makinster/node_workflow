@@ -104,7 +104,7 @@ class NodeCatalogueNode(Node):
             else:
                 value = await build(NodeFactory(), config)
             if config.get('discovery_request_vault_key'):
-                from ...palette_selection import positive_matches, admission, registry_revision, digest
+                from ...palette_selection import positive_matches, admission, registry_revision, digest, implemented_not_admitted
                 import json
                 if config['format'] != 'Text' or config['detail'] != 'Brief':
                     raise NodeError('invalid_config', 'Discovery suggestions require Brief Text.')
@@ -114,7 +114,7 @@ class NodeCatalogueNode(Node):
                     raise NodeError('selection_invalid', 'Discovery needs the original request.')
                 allowed = admission(config)
                 discovery = dict(registry_sha256=registry_revision(factory), request_sha256=digest(request), suggested_type_ids=[k for k in positive_matches(factory, request) if k in allowed],
-                    implemented_not_admitted=sorted(set(factory._node_registry) - allowed - {'tombstone_node'}),
+                    implemented_not_admitted=implemented_not_admitted(factory, allowed),
                     note='Pending names are classification hints, not proven capabilities or admitted candidates.')
                 value += '\nDiscovery: ' + json.dumps(discovery, separators=(',', ':')) + '\n'
                 if len(value) > config['max_chars'] or len(value.encode()) > 256 * 1024:

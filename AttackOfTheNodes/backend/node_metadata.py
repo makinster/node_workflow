@@ -13,10 +13,11 @@ is never permission to run anything. Common engine bookkeeping (run history,
 the output log, timing) and within-run Vault/transient values are not effects;
 explicit files, cross-run saved values and queues are.
 
-Every registered type is either in ``NODE_METADATA`` with a reviewed record or
-in the ``PENDING_REVIEW`` migration ledger. A pending type has *no* record: its
-effects are unknown, never "Read-only". Debug nodes and the tombstone get the
-lighter record (purpose, side_effects, needs) the owner approved.
+Every registered type is in exactly one of three places: ``NODE_METADATA`` with
+a reviewed record, the ``PENDING_REVIEW`` migration ledger, or ``DEV_TEST_ONLY``.
+A pending or dev/test type has *no* record: its effects are unknown, never
+"Read-only". Debug nodes and the tombstone get the lighter record (purpose,
+side_effects, needs) the owner approved.
 """
 
 from __future__ import annotations
@@ -395,24 +396,38 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
 PENDING_REVIEW = frozenset({
     # Batch 2: data, control, meta and state
     "merge_node", "wait_until_node", "error_mux_node", "set_variable_node",
-    "get_variable_node", "variable_setter_node", "variable_reader_node",
-    "random_number_node", "node_catalogue_node", "check_workflow_spec_node",
+    "get_variable_node", "node_catalogue_node", "check_workflow_spec_node",
     "remember_node", "recall_node", "if_changed_node",
     # Batch 3: system, file, service, model and delegated
     "disk_space_node", "file_age_node", "git_status_node", "file_view_node",
     "window_control_node", "http_request_node", "record_event_node",
     "hermes_notify_node", "hermes_ask_node", "hermes_investigate_node",
     "hermes_investigation_result_node", "ask_local_model_node", "ask_claude_node",
-    "chat_completion_node", "image_generation_node", "embedding_node",
     "pick_one_node", "subworkflow_node",
-    # Batch 4: diagnostic, loop and hidden (lighter record)
-    "echo_node", "logger_node", "sleep_node", "counter_node", "memory_snapshot_node",
-    "probe_node", "error_node", "random_branch_node", "deep_branch_node",
-    "no_op_node", "repeat_counter_node", "tombstone_node",
+    # Batch 4: hidden and timing (lighter record)
+    "sleep_node", "tombstone_node",
+})
+
+#: Owner decision 2026-10-30: developer and test nodes. They get no record and
+#: stay out of the normal node picker and every drafter path, but remain
+#: registered: old saved workflows still load, show and run, and claims
+#: scenarios still cover them. Not the same list as LIGHT_RECORD_TYPES, which is
+#: about record shape only.
+DEV_TEST_ONLY = frozenset({
+    "counter_node", "echo_node", "error_node", "logger_node", "memory_snapshot_node",
+    "no_op_node", "probe_node", "repeat_counter_node", "deep_branch_node",
+    "random_branch_node", "variable_setter_node", "variable_reader_node",
+    "embedding_node", "image_generation_node", "chat_completion_node",
+    "random_number_node",
 })
 
 
 # --- access ---------------------------------------------------------------------------
+
+def is_dev_test_only(node_type: str) -> bool:
+    """The one membership test; other code reads the factory's ``dev_test_only``."""
+    return node_type in DEV_TEST_ONLY
+
 
 def record_for(node_type: str) -> Optional[Dict[str, Any]]:
     """An independent copy of the type's record, or None while it is pending."""

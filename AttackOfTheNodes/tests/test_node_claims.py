@@ -30,7 +30,10 @@ from backend.nodes.io.window_support import WINDOW_MANAGER_RESOURCE
 from tests.node_claim_scenarios import CASES, SCENARIO_VERSION
 from tests.test_node_metadata_behavior import engine
 from tools.draft_trials.cases import PALETTE
-from backend.palette_selection import ADMITTED
+from backend.palette_selection import ADMITTED as DRAFTABLE
+
+# Reviewed records keep their full evidence; Merge Beacon has one but is not drafted.
+ADMITTED = DRAFTABLE | {'branch_end_node'}
 
 FACTORY = NodeFactory()
 KINDS = sorted(FACTORY.get_registered_types())
@@ -212,7 +215,7 @@ def check_ports(run):
 
 def test_claim_registry_is_complete():
     assert set(CASES)==set(KINDS)
-    assert len(PALETTE)==12 and PALETTE <= set(CASES)
+    assert len(PALETTE)==11 and PALETTE <= set(CASES)
     assert all(row.get('boundary') or not FACTORY.metadata_for_type(k).get('node_metadata',{} )
                or k in ADMITTED for k,row in CASES.items())
 

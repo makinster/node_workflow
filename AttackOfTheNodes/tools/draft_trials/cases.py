@@ -4,7 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 PALETTE = frozenset(
-    "start_node end_node branch_end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node".split()
+    "start_node end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node".split()
 )
 REQUESTS = [
     "When I run it, show Ready in the output.",

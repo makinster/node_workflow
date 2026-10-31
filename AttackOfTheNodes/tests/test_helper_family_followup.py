@@ -149,7 +149,16 @@ async def test_saved_conditional_json_shape_passes_rules_and_real_engine(tmp_pat
     assert check_rules(bad,case)['result']=='fail'
 
 
-@pytest.mark.parametrize('kind',['text_transform_node','branch_end_node'])
+def test_merge_beacon_is_refused_in_a_set_three_draft(tmp_path):
+    case=case_record(3,tmp_path,3)
+    runner.prepare_files(tmp_path,fixture_variants(3,3)[0])
+    draft=recorded_draft(tmp_path)
+    draft['nodes']['extra']=dict(type='branch_end_node',config={})
+    report=check_rules(draft,case)
+    assert report['result']=='fail' and 'outside admitted palette' in str(report['rules'])
+
+
+@pytest.mark.parametrize('kind',['text_transform_node'])
 def test_other_locally_executable_admitted_types_are_evaluated(tmp_path,kind):
     case=case_record(3,tmp_path,3)
     runner.prepare_files(tmp_path,fixture_variants(3,3)[0])

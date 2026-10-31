@@ -7,7 +7,7 @@
         "backend/nodes/start_node.py": "24745b954cbcfb057a532340bce62420846e699d06c537a60a803e0c7dd9cc17",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
@@ -33,7 +33,7 @@
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/master_state.py": "dea6cc4c75f7414fd9bbb63bf037798907839cc2d41fafd4e4c09584b6112b07",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
@@ -57,7 +57,7 @@
       "sources": {
         "backend/nodes/branch_end_node.py": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
         "backend/branch_health.py": "7a247eb016ec83dfd0ac99937783a3d36fa45fd5a425fc5d688cd612929273a1",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -81,7 +81,7 @@
         "backend/nodes/branch_node.py": "3a3274190e2276a30627f3a9f036ba115104cf1ce7fa65633eaa658f359981af",
         "backend/branch_paths.py": "0b4769ebbefffdbaf04a456cac955091f8e6ae6a64f18c4441a5d24013614c8a",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
@@ -105,7 +105,7 @@
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
@@ -132,7 +132,7 @@
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/nodes/io/file_output_node.py": "74994c1760a6a65c97017b7bb4139a3c993f49055e06f069b0cd7af9b1bf8c1e",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
@@ -157,7 +157,7 @@
       "sources": {
         "backend/nodes/data/text_transform_node.py": "ed32338894341d95b81059265e634e7672ab87cf53434743fe8e58ad77327210",
         "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -183,7 +183,7 @@
         "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
         "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -214,7 +214,7 @@
         "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
         "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -240,7 +240,7 @@
       "sources": {
         "backend/nodes/conditional_node.py": "d69a072d8adb6521bb43c97bf26c843d556b29ac0d49d85d881cd05942c55c4d",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
@@ -265,7 +265,7 @@
       "sources": {
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
         "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -291,7 +291,7 @@
     "json_path_node": {
       "sources": {
         "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
-        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
@@ -367,7 +367,7 @@
         "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
         "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
         "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
-        "backend/palette_selection.py": "e682119423684facc795107ae289470810a23a4192152612d1ceb663d2102470"
+        "backend/palette_selection.py": "d5dad9172faf46c6b69c62d343d2bcba9bd7a9f47e65520383e28e99f73f9e4c"
       },
       "tests": [
         "tests/test_node_claims.py::test_reviewed_palette_scenarios",

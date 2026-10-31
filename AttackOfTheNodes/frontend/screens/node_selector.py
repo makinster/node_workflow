@@ -152,6 +152,7 @@ class NodeSelectorScreen(KeymapScreenMixin, ModalScreen):
             node
             for node in self.factory.get_node_types_metadata()
             if str(node.get("type") or "") not in HIDDEN_NODE_TYPES
+            and not node.get("dev_test_only")
         ]
         self.query_one("#node-quick-list", ListView).display = False
         self._sync_tab_buttons()
