@@ -33,6 +33,7 @@ class ExecutionDisplayState:
         branch = self.branch(payload["branch_id"])
         branch["state"] = payload.get("final_state" if terminated else "state", "")
         branch["current_node_id"] = payload.get("current_node_id")
+        branch["depth"] = payload.get("depth", branch["depth"])
         branch["node_phase"] = "ended" if terminated else payload.get("node_phase", "queued")
         if terminated:
             branch["stop_requested"] = bool(payload.get("stop_requested"))

@@ -658,13 +658,18 @@ class Supervisor:
                 if timeout_seconds is None
                 else timeout_seconds
             )
-            return await self._wait_for_merge(
+            result = await self._wait_for_merge(
                 merge_node_id,
                 branch_id,
                 self.delivery,
                 self._visit_index,
                 timeout,
             )
+            if result.get('continue') and 'continuation_depth' in result:
+                # Elect using entry depths first, then close the split's depth
+                # budget before the winner can open a fresh group.
+                self.depth = result['continuation_depth']
+            return result
 
         def publish_event(event_name: str, payload: Dict[str, Any]) -> None:
             # Node-emitted events always carry run/branch/node identity so
@@ -1059,6 +1064,7 @@ class Supervisor:
                 "current_node_id": self.current_node_id,
                 "run_id": self.run_id,
                 "node_phase": self._node_phase,
+                "depth": self.depth,
             },
         )
 

@@ -82,7 +82,7 @@ async def test_reference_normal_startup(host, beacons, same_slot):
     e.gates['A'].set(); await e.finish()
     expected = {'path_a':'slow result', 'path_b':['C','D']} if same_slot else {'path_a':'slow result','path_b':'C','path_c':'D'}
     assert not e.errors() and e.seen[0]['value'] == {'input':expected}
-    assert e.seen[0]['depth'] == 1 and len(e.done(merge)) == 1
+    assert e.seen[0]['depth'] == 0 and len(e.done(merge)) == 1
     assert e.master.run_context.merge_plans[merge].slots['path_b'].cardinality == ('many' if same_slot else 'one')
 
 
@@ -224,8 +224,8 @@ def sequential_splits(e, count):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('count,limit', [(2, 5), (3, 5), (3, 2)])
-async def test_sequential_splits_open_new_groups_and_preserve_runtime_depth(count, limit):
+@pytest.mark.parametrize('count,limit', [(2, 5), (3, 2), (6, 5), (8, 5), (8, 1)])
+async def test_sequential_splits_open_new_groups_and_restore_opening_depth(count, limit):
     e = Engine()
     forks, merges, _, _ = sequential_splits(e, count)
     e.master._configuration_manager._settings['max_branch_depth'] = limit
@@ -233,16 +233,11 @@ async def test_sequential_splits_open_new_groups_and_preserve_runtime_depth(coun
     plans = e.master.run_context.merge_plans
     assert [plans[mid].fork_node_id for mid in merges] == forks
     assert all(plan.slots['path_a'].producers == ((0,),) for plan in plans.values())
-    if count <= limit:
-        expected = 'seed'
-        for _ in range(count): expected = {'path_a':expected, 'path_b':expected}
-        assert not e.errors() and e.memory.read_transient(merges[-1], 'default') == expected
-        assert all(len(e.done(mid)) == 1 for mid in merges)
-        assert max(r['depth'] for r in e.registered) == count
-    else:
-        assert len(e.errors()) == 1 and e.errors()[0]['code'] == 'branch_depth_exceeded'
-        assert e.errors()[0]['node_id'] == forks[-1] and not e.done(merges[-1])
-        assert max(r['depth'] for r in e.registered) == limit
+    expected = 'seed'
+    for _ in range(count): expected = {'path_a':expected, 'path_b':expected}
+    assert not e.errors() and e.memory.read_transient(merges[-1], 'default') == expected
+    assert all(len(e.done(mid)) == 1 for mid in merges)
+    assert max(r['depth'] for r in e.registered) == 1
 
 
 def refused_chain(e):
@@ -337,3 +332,19 @@ async def test_refused_subworkflow_has_a_typed_routable_error():
     assert parent.memory.read_transient(call,'error')['retryable'] is False
     assert parent.master.run_outputs==['child_flow_invalid']
     assert parent.master.call_tree.live==0
+
+
+@pytest.mark.asyncio
+async def test_real_nesting_beyond_default_depth_still_refuses_the_whole_batch():
+    e=Engine();previous=e.start;forks=[]
+    for _ in range(6):
+        fork=e.add('branch_node');forks.append(fork)
+        e.wire(previous,fork,'path_a' if previous!=e.start else 'default')
+        end=e.add('end_node',record_line=False);e.wire(fork,end,'path_b')
+        previous=fork
+    last=e.add('text_output_node',label='',template='must not run');e.wire(previous,last,'path_a')
+    await start(e);await e.finish()
+    assert len(e.errors())==1 and e.errors()[0]['node_id']==forks[-1]
+    assert e.errors()[0]['code']=='branch_depth_exceeded'
+    assert max(r['depth'] for r in e.registered)==5 and not e.done(last)
+    assert not e.master.run_outputs
