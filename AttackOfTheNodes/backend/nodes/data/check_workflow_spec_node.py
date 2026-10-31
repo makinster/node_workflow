@@ -53,4 +53,7 @@ class CheckWorkflowSpecNode(Node):
                 report['selection_sha256'] = receipt['contracts_sha256']
             publish(self.config, context, value, 'var', review_report(report))
         except NodeError as exc:
+            # Keep check()'s complete analysis for code callers and the draft
+            # stage check above; routed failures need only reviewer evidence.
+            exc.details = review_report(exc.details)
             context.signal_error(exc)

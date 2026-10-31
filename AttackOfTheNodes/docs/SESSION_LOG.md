@@ -6,6 +6,17 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Plain shared-check refusals and smaller repair evidence
+
+Worktree `/home/makin/src/plain-shared-check`, branch `codex/plain-shared-check`,
+from current main `e7efdae`. Flow findings now supply their message and repair to
+the top refusal through the existing redaction/caps. Check node error routing uses
+`review_report`; direct checks and the draft-stage check keep the full analysis.
+Mocked inner-Merge and escaping-route drafts are refused, then repaired once and
+pass. Pinned designer text for sets 1–3, guidance, palette and scoring are unchanged.
+Full suite: **5,239 passed / 187 skipped**; no API calls.
+[Verification and measured sizes](audits/plain_shared_check_2026_10_31/README.md).
+
 ## 2026-10-31 — Explain blocked drafts before structural validation
 
 Clean worktree `/home/makin/src/nw-blocked-draft-reason`, branch

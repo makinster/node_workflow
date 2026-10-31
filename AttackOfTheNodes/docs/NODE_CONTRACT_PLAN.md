@@ -10,6 +10,11 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
+Family-2 shared-check wording follow-up (2026-10-31, from `e7efdae`): implemented
+plain top-level findings/repairs and reviewer-sized routed failures. Full analysis
+still reaches the draft-stage gate; refusal policy and sets 1–3 pins are unchanged.
+[Mock repair verification](audits/plain_shared_check_2026_10_31/README.md).
+
 Family-2 block 3 (2026-10-31, from merged main `58a2299`): final Merge/Wait
 records, corrected editor Beacon and real-engine claim receipts implemented for
 review; no admission or Set/Get changes. Merge now restores its opening Branch
