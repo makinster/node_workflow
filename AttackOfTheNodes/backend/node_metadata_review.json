@@ -6,7 +6,7 @@
       "sources": {
         "backend/nodes/start_node.py": "24745b954cbcfb057a532340bce62420846e699d06c537a60a803e0c7dd9cc17",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
@@ -28,16 +28,16 @@
       "content_sha256": "aa02d3d6ed6df691247300bdfe88c74c4db82ce5e83950d5c82874d03ae50dbf",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "end_node": {
       "sources": {
         "backend/nodes/end_node.py": "c5dad96d959429b270a6bdba93cbae62436551359fd2ebc292818b79b74f33d4",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
-        "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
+        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
@@ -60,8 +60,8 @@
       "content_sha256": "d1286b3cd480d410205b781edb27d75fae9637801d584f50fa0263762bcd5717",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "branch_end_node": {
       "sources": {
@@ -71,7 +71,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
@@ -94,14 +94,14 @@
       "content_sha256": "99072bc39d7c0cda5cf3fbd56bd79f25dd7074fe9989a806af95a7e299fe6619",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e",
-      "verifier": "app-run-validation-source-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "branch_node": {
       "sources": {
         "backend/nodes/branch_node.py": "57a6f18c2f56b7f829ed9bb283e89e93dadba63b535d92e5da8132b6ad1936ec",
         "backend/branch_paths.py": "0b4769ebbefffdbaf04a456cac955091f8e6ae6a64f18c4441a5d24013614c8a",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
@@ -122,13 +122,13 @@
       "content_sha256": "225fcd31d7cf6ae59f14b88a66a76b3fc29314b2d7433ae86f2c3a80225d857c",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "user_text_input_node": {
       "sources": {
         "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
@@ -153,8 +153,8 @@
       "content_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "text_output_node": {
       "sources": {
@@ -166,7 +166,7 @@
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -186,8 +186,8 @@
       "content_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "text_transform_node": {
       "sources": {
@@ -197,7 +197,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -215,8 +215,8 @@
       "content_sha256": "db8e0c03527a975f0601863f06699ada4347512c1583652b8ad27c19e12ef6e2",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "file_reader_node": {
       "sources": {
@@ -228,7 +228,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -247,8 +247,8 @@
       "content_sha256": "ea72295a985b2e71ab45df834a27f3514ad8263025f1bfb1f99ad9d33d3d1870",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "file_output_node": {
       "sources": {
@@ -264,7 +264,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -284,13 +284,13 @@
       "content_sha256": "f8ca8c813eb43ad300395be7c6ed86572fd651c9ee6e9c5844a38bfded1c1438",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "conditional_node": {
       "sources": {
         "backend/nodes/conditional_node.py": "d69a072d8adb6521bb43c97bf26c843d556b29ac0d49d85d881cd05942c55c4d",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
@@ -314,8 +314,8 @@
       "content_sha256": "851d5b0cda1bb2a82f22cc7d16a9560c5c0e1b6a8943ac874d52c6405c18fbf8",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "concat_node": {
       "sources": {
@@ -325,7 +325,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -346,8 +346,8 @@
       "content_sha256": "cc02379128b56a933eb9eb56b3a7c40a51566462db9b180ebe934b1f619149a6",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "json_path_node": {
       "sources": {
@@ -356,7 +356,7 @@
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443"
@@ -374,8 +374,8 @@
       "content_sha256": "097aa179e65876159dbfaa650ebaa7f7e19cdbc19b387c03e117796c69df4831",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
+      "verifier": "family-two-pause-and-joining-obligations-recheck"
     },
     "find_lines_node": {
       "sources": {
@@ -481,8 +481,8 @@
     "merge_node": {
       "sources": {
         "backend/nodes/merge_node.py": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
-        "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
         "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
@@ -510,15 +510,15 @@
       ],
       "content_sha256": "e81c833ac2facb056ccae9c08343d1d0a7487a7372420524cf19b74891ec609c",
       "author": "family-two-record-author",
-      "verifier": "plain-shared-check-source-and-mock-repair-recheck",
+      "verifier": "family-two-pause-and-joining-obligations-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "e7efdaef9d1088ceaf0e76942bbf329fdbfa70f2"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503"
     },
     "wait_until_node": {
       "sources": {
         "backend/nodes/wait_until_node.py": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
-        "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
-        "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
         "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
@@ -546,9 +546,9 @@
       ],
       "content_sha256": "e5c7039125ef2eed59ca340257c5399e26817768421f67bf25003087b10f1b7a",
       "author": "family-two-record-author",
-      "verifier": "plain-shared-check-source-and-mock-repair-recheck",
+      "verifier": "family-two-pause-and-joining-obligations-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "e7efdaef9d1088ceaf0e76942bbf329fdbfa70f2"
+      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503"
     }
   }
 }

@@ -10,6 +10,12 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
+Family-2 review follow-up (2026-10-31, rebased onto `784df48`): prepared child
+supervisors obey pause/resume, wakeups recheck pause, and the logical scorer uses
+Merge joining obligations. The picker test waits for actual callback completion.
+Real-engine regression/replay evidence is in the
+[review audit](audits/family_two_review_2026_10_31/README.md). No admission change.
+
 Family-2 shared-check wording follow-up (2026-10-31, from `e7efdae`): implemented
 plain top-level findings/repairs and reviewer-sized routed failures. Full analysis
 still reaches the draft-stage gate; refusal policy and sets 1–3 pins are unchanged.

@@ -19,7 +19,7 @@ from backend.palette_selection import draft_stage_problems
 from .rules import NeedsReview, RuleFailure, safe_path, effective_nodes
 from .case_set_four import fixture_variants
 
-POLICY_VERSION = 'family-2-evaluator-4'
+POLICY_VERSION = 'family-2-evaluator-5'
 LOCAL_TYPES = frozenset('start_node end_node branch_node merge_node wait_until_node file_reader_node json_path_node concat_node text_output_node text_transform_node conditional_node context_pack_node'.split())
 
 
@@ -237,7 +237,14 @@ def evaluate(spec,case,variant,*,order='forward',stop_after=None):
                 advance(w,w.value)
         for (gid,mid),arrivals in list(receipts.items()):
             active=groups[gid]['active']
-            if not active or not all(workers[i].state=='join' and workers[i].node==mid for i in active):
+            # Only workers on the analysis's joining paths owe this arrival.
+            # Prefixes include an inner split until it hands off to its children.
+            # Keep finished required paths here: disappearing is not arriving.
+            paths={arrival.lineage for arrival in analysis.merges[mid].arrivals}
+            joining=[w for w in workers.values() if w.group==gid and w.state!='handoff'
+                     and any(w.lineage[:len(path)]==path or path[:len(w.lineage)]==w.lineage
+                             for path in paths)]
+            if not joining or not all(w.state=='join' and w.node==mid for w in joining):
                 continue
             winner=min(arrivals,key=lambda a:(a['worker'].depth,a['sequence']))['worker']
             fields={}
@@ -263,7 +270,7 @@ def evaluate(spec,case,variant,*,order='forward',stop_after=None):
                 if w is not winner:
                     finish(w)
                     events.append(dict(event='absorbed',node=mid,worker=w.id))
-            active.clear()
+            active.discard(winner.id)
             winner.group=None
             winner.lineage=()
             # Publish before the one completion event; absorbed paths never complete Merge.
@@ -325,6 +332,7 @@ def evaluate(spec,case,variant,*,order='forward',stop_after=None):
                 for (target,slot),payload,lineage in children:
                     spawn(target,payload,gid,lineage,w.depth+1,slot)
                 finish(w)
+                w.state='handoff'
                 completed.add(h)
                 events.append(dict(event='handoff',node=h,children=len(children)))
                 continue

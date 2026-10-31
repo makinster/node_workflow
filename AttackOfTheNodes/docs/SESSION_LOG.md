@@ -6,6 +6,22 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Fix Family 2 pause/scorer races and picker timing
+
+Branch `codex/family-two-review-fixes`, worktree `/home/makin/src/family-two-review-fixes`,
+started at main `e7efdae`, rebased onto `784df48`. Pause includes all prepared live
+supervisors; newly created children inherit it. Re-woken supervisors recheck pause
+before executing. The logical scorer uses analysis joining lineages, preserving
+failure for lost required arrivals. The flaky picker assertion now waits for the
+completed async selection callback without a fixed delay; no app bug was found.
+
+Real-engine tests cover both orders, breakpoint/manual pause, Resume, Stop and
+stepping, with one Merge completion. The independent Wait Until(join) side path
+passes logical/real execution in both orders; required failures remain failures.
+Saved-reply replay is unchanged for all 26 cases; calibration retains one saved
+false failure and lacks eight newer replies. No API calls or out-of-scope source
+changes. Full suite: **5,255 passed / 187 skipped**. [Detailed evidence](audits/family_two_review_2026_10_31/README.md).
+
 ## 2026-10-31 — Plain shared-check refusals and smaller repair evidence
 
 Worktree `/home/makin/src/plain-shared-check`, branch `codex/plain-shared-check`,

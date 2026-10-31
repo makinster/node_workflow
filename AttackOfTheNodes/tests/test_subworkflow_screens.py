@@ -221,16 +221,28 @@ def test_picker_lists_subworkflows_searches_and_counts():
     flow = caller("")
 
     async def steps(app, screen, pilot):
+        async def ready(predicate):
+            async def wait():
+                while not predicate():
+                    await pilot.pause()
+            await asyncio.wait_for(wait(), timeout=5)
+
         screen._open_subworkflow_picker()
-        await pilot.pause(0.2)
+        await ready(lambda: isinstance(app.screen, SubworkflowPicker)
+                    and len(app.screen.query(".pick-row")) == 13
+                    and str(app.screen.query_one("#pick-count").render()) == "13 subworkflows")
         picker = app.screen
         assert isinstance(picker, SubworkflowPicker)
         everything = str(picker.query_one("#pick-count").render()), len(picker.query(".pick-row"))
         picker.query_one("#pick-search", CommandInput).value = "greet"
-        await pilot.pause(0.2)
+        await ready(lambda: len(picker.query(".pick-row")) == 1
+                    and str(picker.query_one("#pick-count").render()) == "1 of 13 subworkflows"
+                    and "who [string] required" in str(picker.query_one("#pick-preview").render()))
         found = str(picker.query_one("#pick-count").render()), str(picker.query_one("#pick-preview").render())
         picker.query_one(".pick-row").press()
-        await pilot.pause(0.2)
+        await ready(lambda: app.screen is screen
+                    and str(screen.query_one("#sub-name").render()) == "Greeter [sub]"
+                    and screen._collected_config()["workflow_id"] == child_id)
         return everything, found, str(screen.query_one("#sub-name").render()), screen._collected_config()
 
     everything, found, name, config = open_config(flow, steps)
