@@ -36,7 +36,9 @@ from frontend.screens.confirm import ConfirmScreen
 from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
 from frontend.screens.node_config import (
     NodeConfigScreen,
+    merge_home_port,
     merge_input_options,
+    merge_slot_label,
     selected_merge_ports,
     unmatched_merge_values,
     upstream_branch_info,
@@ -348,6 +350,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if (self.selected_row or {}).get('saved_paths'):
             notifications.notify_info(self.app, 'Select a live path before inserting.')
             return
+        if self.selected_row and self.selected_row.get("direct_join"):
+            notifications.notify_info(self.app, "This path ends by joining the Merge")
+            return
         if self._selected_insert_target_is_merge_beacon():
             notifications.notify_info(self.app, "Merge Beacon is the end of this branch")
             return
@@ -593,6 +598,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 self._show_saved_paths(node_id)
             return
         self._restore_node_list_focus()
+        if self.selected_row and self.selected_row.get("direct_join"):
+            self._select_merge_from_beacon_modal({"merge_node_id": self.selected_row["active_merge_id"]})
+            return
         if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
             self._open_merge_beacon_selector(self.selected_row)
             return
@@ -2018,7 +2026,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         output_ports = self._output_ports_for_node(node, metadata)
         for port in output_ports:
             target = self._target_for_port(node, port)
-            if not target:
+            if not target or self._joins_merge_from_other_path(self._connection_for_port(node, port)):
                 continue
             next_choices = list(choices)
             if len(output_ports) > 1:
@@ -2642,6 +2650,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
                         "depth": depth,
                     }
                 )
+                join = self._connection_for_port(node, active_port)
+                if self._joins_merge_from_other_path(join):
+                    rows.append(self._merge_join_row(current_node_id, join, depth, active_color_key))
+                    break
                 current_node_id = self._target_for_port(node, active_port)
                 current_branch_port = active_port
                 current_branch_color_key = active_color_key
@@ -2652,6 +2664,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
             next_port = "default"
             if output_ports:
                 next_port = output_ports[0]
+            join = self._connection_for_port(node, next_port)
+            if self._joins_merge_from_other_path(join):
+                rows.append(self._merge_join_row(current_node_id, join, depth, current_branch_color_key))
+                break
             current_node_id = self._target_for_port(node, next_port)
             depth += 1
         return rows
@@ -2732,6 +2748,33 @@ class EditorScreen(KeymapScreenMixin, Screen):
         _, port = choices[-1]
         branch_index = len(choices) - 1
         return branch_path_color_key(branch_index, port)
+
+    def _joins_merge_from_other_path(self, connection: Optional[Dict[str, Any]]) -> bool:
+        """True when this wire enters a Merge whose next steps show on another path."""
+        if not connection:
+            return False
+        home = merge_home_port(self.workflow_map, str(connection.get("target_node_id") or ""))
+        return bool(home) and str(connection.get("target_port") or "") != home
+
+    def _merge_join_row(
+        self,
+        source_node_id: str,
+        connection: Dict[str, Any],
+        depth: int,
+        active_color_key: str | None,
+    ) -> Dict[str, Any]:
+        merge_id = str(connection.get("target_node_id") or "")
+        return {
+            "kind": "merge_beacon_select",
+            "direct_join": True,
+            "beacon_node_id": source_node_id,
+            "active_merge_id": merge_id,
+            "active_label": f"Joins {friendly_label(self.workflow_map, merge_id)}",
+            "active_port": self._upstream_branch_port_for_node(source_node_id),
+            "active_color_key": active_color_key,
+            "depth": depth,
+            "merge_slot": str(connection.get("target_port") or ""),
+        }
 
     def _merge_beacon_select_row(
         self,
@@ -3049,6 +3092,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
         return "\n".join(lines)
 
     def _format_merge_beacon_selector_details(self, row: Dict[str, Any]) -> str:
+        if row.get("direct_join"):
+            return "\n".join((
+                f"This path ends by joining: {friendly_label(self.workflow_map, row['active_merge_id'])}",
+                f"Arrives as: {merge_slot_label(row['merge_slot'])}",
+                "",
+                "E: jump to the Merge",
+            ))
         beacon_node = self.workflow_map.get_node_data(row["beacon_node_id"]) or {}
         merge_id = row.get("active_merge_id") or ""
         lines = [

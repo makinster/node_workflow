@@ -589,6 +589,40 @@ def _reserved_merge_input_ports(workflow_map, merge_node_id: str) -> set[str]:
     return reserved
 
 
+def merge_home_port(workflow_map, merge_node_id: str) -> str:
+    """The directly wired slot whose path lists Merge and the steps after it."""
+    merge_node = workflow_map.get_node_data(merge_node_id) or {}
+    if merge_node.get("type") != MERGE_NODE_TYPE:
+        return ""
+    reserved = _reserved_merge_input_ports(workflow_map, merge_node_id)
+    carry = str((merge_node.get("config") or {}).get("carry_forward_branch_id") or "")
+    if carry.startswith("home:") and carry.removeprefix("home:") in reserved:
+        return carry.removeprefix("home:")
+    return next((port for port in ALL_PATH_PORTS if port in reserved), "")
+
+
+def merge_slot_label(port: str) -> str:
+    return port.replace("_", " ").title()
+
+
+def merge_slot_lines(workflow_map, merge_node_id: str) -> list[str]:
+    """One line per connected slot: what arrives there and how to read it."""
+    merge_node = workflow_map.get_node_data(merge_node_id) or {}
+    home = merge_home_port(workflow_map, merge_node_id)
+    sources: Dict[str, list[str]] = {}
+    for conn in merge_node.get("connections", {}).get("inputs", []):
+        port = str(conn.get("target_port") or "")
+        source_id = str(conn.get("source_node_id") or "")
+        if port and source_id:
+            sources.setdefault(port, []).append(friendly_label(workflow_map, source_id))
+    return [
+        f"{merge_slot_label(port)}: {', '.join(sources[port])}. Read later as {{input[{port}]}}."
+        + (" Next steps are listed on this path." if port == home else "")
+        for port in ALL_PATH_PORTS
+        if port in sources
+    ]
+
+
 def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dict[str, str]:
     outputs = normalize_membank_outputs(source_node.get("config") or {})
     for output in outputs:
@@ -2638,24 +2672,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_cursor_mode()
 
     def _selection_list_at_bottom(self, selection_list: SelectionList) -> bool:
+        # An empty list has no row to move to, so the cursor moves past it.
+        if selection_list.option_count == 0:
+            return True
         highlighted = getattr(selection_list, "highlighted", None)
         if highlighted is None:
             return False
-        try:
-            option_count = len(selection_list._options)
-        except Exception:
-            option_count = 0
-        return option_count > 0 and highlighted >= option_count - 1
+        return highlighted >= selection_list.option_count - 1
 
     def _selection_list_at_top(self, selection_list: SelectionList) -> bool:
+        if selection_list.option_count == 0:
+            return True
         highlighted = getattr(selection_list, "highlighted", None)
         if highlighted is None:
             return False
-        try:
-            option_count = len(selection_list._options)
-        except Exception:
-            option_count = 0
-        return option_count > 0 and highlighted <= 0
+        return highlighted <= 0
 
     def _reply_fields_at_focus(self):
         from frontend.widgets.reply_fields import ReplyFields
@@ -3777,16 +3808,25 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             key: config.get(key, "")
             for key in ("carry_forward_branch_id", "selected_branch_id")
         }
+        yield Label("Paths joined here", classes="form-label nav-section", id="merge-slots-label")
+        slot_lines = merge_slot_lines(self.workflow_map, self.node_id)
+        yield Static(
+            "\n".join(slot_lines) or "Nothing is connected to this Merge yet.",
+            id="merge-slots",
+            classes="form-description",
+            markup=False,
+        )
+        reserved = _reserved_merge_input_ports(self.workflow_map, self.node_id)
         if not options:
-            yield Static("No open branches are available to close.", classes="form-description")
-            if not _reserved_merge_input_ports(self.workflow_map, self.node_id) and not (
-                self._merge_kept_close or self._merge_kept_carry
-            ):
+            if not reserved:
+                yield Static("No open branches are available to close.", classes="form-description")
+            if not reserved and not (self._merge_kept_close or self._merge_kept_carry):
                 return
         selected_values = self._selected_merge_close_values(options, config)
         selected_values |= set(self._merge_kept_close)
         capacity = len(ALL_PATH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
-        yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
+        if options or self._merge_kept_close:
+            yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
         if self._merge_kept_close or self._merge_kept_carry:
             yield Static(
                 merge_unmatched_warning(self._merge_kept_close, self._merge_kept_carry),
@@ -3800,14 +3840,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             (f"Kept, no longer matches a branch: {value}", value)
             for value in self._merge_kept_close
         ]
-        yield SelectionList(
-            *dynamic_selection_rows(
-                rows,
-                selected_values,
-                select_all_when_empty=False,
-            ),
-            id="merge-branches-to-close",
-        )
+        if rows:
+            yield SelectionList(
+                *dynamic_selection_rows(
+                    rows,
+                    selected_values,
+                    select_all_when_empty=False,
+                ),
+                id="merge-branches-to-close",
+            )
         yield Label("Merge home path (wiring)", classes="form-label nav-section", id="merge-carry-forward-label")
         carry_options = self._merge_carry_forward_options(options, selected_values)
         carry_value = self._selected_merge_carry_value(carry_options, config)
