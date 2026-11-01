@@ -410,6 +410,10 @@ class MasterState:
             get_setting=self._configuration_manager.get,
             **kwargs,
         )
+        # Children are prepared before their tasks publish registration. Inherit
+        # a pause even when an in-flight Branch hands off after pause().
+        if self.state == WorkflowState.PAUSED:
+            supervisor.request_pause()
         if register:
             run.live_supervisors[supervisor.branch_id] = supervisor
         return supervisor
@@ -419,7 +423,7 @@ class MasterState:
         input pauses before its next node)."""
         if self.state not in (WorkflowState.RUNNING, WorkflowState.WAITING_FOR_INPUT):
             return
-        for supervisor in self._supervisors.values():
+        for supervisor in self._run.live_supervisors.values() if self._run else ():
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
         for child in list(self._children):
@@ -429,7 +433,7 @@ class MasterState:
         """Resume all paused supervisors."""
         if self.state != WorkflowState.PAUSED:
             return
-        for supervisor in self._supervisors.values():
+        for supervisor in self._run.live_supervisors.values() if self._run else ():
             supervisor.request_resume()
         self._set_state(WorkflowState.RUNNING)
         for child in list(self._children):
@@ -912,6 +916,8 @@ class MasterState:
     def _on_supervisor_state_update(self, payload: Dict[str, Any]) -> None:
         if payload.get("run_id") != self.current_run_id:
             return
+        if self.state == WorkflowState.PAUSED:
+            return  # An in-flight node can begin waiting without resuming the run.
         if payload["state"] == "WAITING_FOR_INPUT":
             self._set_state(WorkflowState.WAITING_FOR_INPUT)
         elif payload["state"] == "AWAITING_RECOVERY":
@@ -929,7 +935,7 @@ class MasterState:
         self._record_run("ERROR")
 
     def _on_breakpoint_hit(self, _payload: Dict[str, Any]) -> None:
-        for supervisor in self._supervisors.values():
+        for supervisor in self._run.live_supervisors.values() if self._run else ():
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
         # The whole call tree pauses (C20): from a child, through the root.
