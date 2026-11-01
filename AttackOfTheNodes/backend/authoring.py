@@ -55,6 +55,7 @@ from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_w
 from .flow_behaviors import parse_targets, referenced_flow
 from .vault_declarations import typed_vault_writes, vault_read_entries
 from .node_capabilities import STANDARD_FLAGS, supported_standard_flags
+from .merge_beacons import insert_merge_beacons
 from .workflow_map import WorkflowMap
 from .workflow_names import name_problem, name_taken
 
@@ -348,12 +349,13 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
     if problem:
         return failed("name_invalid", problem)
     workflow_id = workflow_map.workflow_id
+    added_beacons = insert_merge_beacons(workflow_map, factory)
     SaveManager(workflow_map).save_current_workflow()
     problem = _reload_problem(factory, workflow_id, workflow_map)
     if problem:
         persistence.delete_workflow(workflow_id)
         return failed("reload_mismatch", problem)
-    return {**report, "path": str(persistence.WORKFLOWS_DIR / f"{workflow_id}.json")}
+    return {**report, "added_beacons": added_beacons, "path": str(persistence.WORKFLOWS_DIR / f"{workflow_id}.json")}
 
 
 def _checked_graph(factory: NodeFactory, spec: Any, *, max_branch_depth: int | None = None):
