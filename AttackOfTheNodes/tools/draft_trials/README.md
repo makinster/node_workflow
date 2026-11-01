@@ -663,3 +663,16 @@ The receipt binds evaluation policy, shared analysis, current admission, manifes
 and contract sources, frozen pair bytes and fixture snapshots. This is local
 behaviour/replay proof, not fresh drafting-quality evidence or exhaustive
 interleaving verification.
+
+## Reply limit and judge rows (2026-10-31)
+
+Run 000051's F2-05 draft reply hit the 4,096 token limit and was cut off, so the draft and
+redraft steps now allow 8,192. The judge also split a pair's one requirement into five
+rows in runs 000048, 000049 and 000051, which the format check rejects however right the
+verdict; the judge prompt now asks for exactly one row per frozen requirement, with its
+id unchanged. That wording reaches every set, so the frozen designer pins were refreshed.
+
+Run 000052's analysis step also wrote requirements F2-04 never asked for: file text stored
+under a named Vault slot, and a completion record for each path. The judge enforced them
+against a correct draft. The analysis guidance now says Merge carries the results and joined
+paths finish once. Sets 1, 2 and 3 do not see this sentence.

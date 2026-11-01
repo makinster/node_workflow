@@ -10,6 +10,7 @@ JOIN_ANALYSIS = (' When parallel paths must all finish before one later step use
                  'declare both parallel_paths and join; join adds Merge, which collects them. '
                  'A path that splits again, and either-or results, still use that one join. '
                  'When one path must hold until a step on another path has finished, also declare wait_for_step; it adds Wait Until. '
+                 'Merge carries the results forward and joined paths finish once, so do not require a Vault slot or a separate End or completion record for each path unless the request asks for one. '
                  'A shared End only finishes paths; it never waits for or combines them.')
 JOIN_DRAFT = (' To use parallel results together: one branch_node, each path wired to its own merge_node input '
               '(reader_a.default to join.path_a, reader_b.default to join.path_b), then join.default to the next step. '

@@ -20,6 +20,9 @@ from tools.draft_trials.reply_schemas import analysis_schema
 from tools.draft_trials.rules import check_rules
 
 
+ONE_ROW_RULE='Write exactly one coverage row per frozen requirement, using its id unchanged, even when a requirement has several parts. '
+
+
 def test_family_schema_enums_and_frozen_baseline():
     assert ORIGINAL_PALETTE==PALETTE and len(ORIGINAL_PALETTE)==11
     assert HELPER_PALETTE==ORIGINAL_PALETTE|HELPERS and len(HELPER_PALETTE)==15
@@ -38,9 +41,10 @@ def test_family_schema_enums_and_frozen_baseline():
     assert set(schema['properties']['selection']['properties']['candidates']['items']['properties']['type_id']['enum'])==PALETTE
     with pytest.raises(NodeError,match='Not admitted'):
         exact_ids(NodeFactory(),['find_lines_node'],allowed=ORIGINAL_PALETTE)
-    # No judge prompt tuning as part of family admission.
+    # No judge prompt tuning as part of family admission; the one-row rule is the deliberate later change.
     old=json.loads(subprocess.check_output(['git','show','8ee108b:AttackOfTheNodes/docs/delivery_tests/specs/draft-a-workflow-v2.json']))
-    assert spec['nodes']['judge_question']==old['nodes']['judge_question']
+    judge=spec['nodes']['judge_question']['config']['template'].replace(ONE_ROW_RULE,'')
+    assert judge==old['nodes']['judge_question']['config']['template']
     for name in ('analysis_question','resolve_question','draft_question'):
         assert 'find_lines_node' in spec['nodes'][name]['config']['template']
 
