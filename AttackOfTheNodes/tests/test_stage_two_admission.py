@@ -335,3 +335,10 @@ async def test_a_refused_error_wire_gets_the_one_redraft_with_the_plain_message(
     assert report['draft_retry'] == dict(requested=True, attempted=1, succeeded=1, check_passed=True)
     error = str(json.loads((tmp_path/'trial/cases/1/evidence.json').read_text())['first_check_error'])
     assert 'a route leaving the Merge' in error and 'must feed a later step' in error
+
+
+def test_draft_steps_have_room_and_the_judge_writes_one_row_per_requirement():
+    # Run 000051: a draft reply hit 4,096 tokens; judge rows split in 000048/49/51.
+    nodes = json.loads(runner.SPEC.read_text())['nodes']
+    assert nodes['draft']['config']['max_tokens'] == nodes['draft_retry']['config']['max_tokens'] == 8192
+    assert 'exactly one coverage row per frozen requirement' in nodes['judge_question']['config']['template']
