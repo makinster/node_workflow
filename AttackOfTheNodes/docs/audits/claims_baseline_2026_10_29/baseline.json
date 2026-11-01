@@ -4,7 +4,7 @@
   "date": "2026-10-30",
   "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy; collecting Merge runtime dependency recheck on 2026-10-30 (no admission change)",
   "registered_count": 59,
-  "reviewed_count": 18,
+  "reviewed_count": 21,
   "nodes": [
     {
       "node_type": "ask_claude_node",
@@ -1780,7 +1780,7 @@
     },
     {
       "node_type": "http_request_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/io/http_request_node.py",
       "source_sha256": "8ce5ee8bc814c88affb897911067971e37b7060ee0ab51acaff6084009582ee4",
@@ -1835,7 +1835,7 @@
     },
     {
       "node_type": "if_changed_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/data/if_changed_node.py",
       "source_sha256": "c8917e197bb130d744fffa144488bc603cfa7d2c6aaa12505e1a7d0da3db8a54",
@@ -2879,7 +2879,7 @@
     },
     {
       "node_type": "hermes_notify_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/io/hermes_notify_node.py",
       "source_sha256": "97303bfffce271e4de5118ce7d0ac9ba24601d6484a721a0a436bfef11b98284",

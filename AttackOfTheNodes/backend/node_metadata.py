@@ -419,6 +419,71 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
                                      'longest-first prefixes. Omitted note: label (N characters from the start, omitted). '
                                      'Compact footer: Shortened: i=N[*]; … (characters from start, section order; * omitted). '
                                      'Limits: 256 KiB/value, 1 MiB total, depth 8.'}},
+    "http_request_node": {
+        "schema_version": 1,
+        "purpose": "Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)",
+        "use_when": "Fetch a URL, including an internet endpoint, or POST configured text or an incoming value to a service and use its response.",
+        "not_for": "A read-only local probe, a browser session, or automatic retries. POST sends data and the endpoint can change remote state.",
+        "side_effects": {
+            "possible": ["writes_files", "spends_money", "changes_external_state", "sends_data"],
+            "delegated": False,
+            "note": "Can reach the internet. Requests send URL and headers; POST also sends a body. Endpoint behavior may change remote state or incur charges. File response mode writes raw bytes to a local run-owned file.",
+        },
+        "needs": {
+            "required": ["network"], "optional": ["credentials", "local_files"], "unresolved": False,
+            "note": "A configured URL is required. auth_token_secret optionally supplies a Secrets-store bearer token. File response mode needs a run session and writable run-files storage; endpoint authentication depends on the service.",
+        },
+        "cost_class": "variable",
+        "cost_note": "No built-in usage fee; the configured endpoint may charge for requests or POST actions.",
+        "time_class": "variable",
+        "time_note": "Synchronous network I/O can block the event loop. The socket timeout defaults to 10 seconds; response size and total duration are not capped.",
+        "execution_contract": {
+            "output_payload": "default: response text decoded using Content-Type charset (UTF-8 fallback, replacement errors), or a {type, ref_key, path, lifetime} file reference to streamed raw bytes. File mode requires run_session; run-owned files are deleted on successful run cleanup unless keep_response_file=true; failed/stopped runs retain them.",
+            "notes": "GET has no body. POST body_source=config sends body text; input sends UTF-8 text, raw bytes, or JSON for other values (None sends empty bytes). Optional bearer token comes from Secrets. missing_url, timeout, network and http_status are coded errors; http_status details include status, URL and up to 4096 response bytes decoded as UTF-8. Other exceptions use the generic node error. No retry loop.",
+        },
+    },
+    "hermes_notify_node": {
+        "schema_version": 1,
+        "purpose": "Queues a message that Hermes sends you on Telegram",
+        "use_when": "Queue a short notification in the local Hermes outbox for its configured 5-minute delivery cycle; continue without waiting for delivery.",
+        "not_for": "Immediate or confirmed delivery: queued is not delivered. This node neither sends Telegram requests nor installs the Hermes delivery job.",
+        "side_effects": {
+            "possible": ["writes_files", "sends_messages", "sends_data"], "delegated": True,
+            "note": "Writes local outbox, receipt and repeat-suppression files. Hermes sends queued message data to Telegram on its separately configured 5-minute cycle; queuing does not confirm delivery. Commands are escaped unless explicitly allowed.",
+        },
+        "needs": {
+            "required": ["local_files"], "optional": ["network", "credentials", "background_service"], "unresolved": False,
+            "note": "Queuing needs a writable Hermes folder and a send_to name in settings. Delivery needs Hermes's separately installed 5-minute drain job, network access and Telegram setup/credentials; the node does not validate delivery readiness.",
+        },
+        "cost_class": "no_usage_fee",
+        "time_class": "variable",
+        "time_note": "Queuing waits on local file I/O and a lock. Hermes sends on a configured 5-minute cycle; delivery is not awaited or guaranteed.",
+        "execution_contract": {
+            "output_payload": "By default forwards the original wired input unchanged (dead_drop_passthrough=true), even when message input comes from Vault. Optional Vault output stores {receipt_id, status, message}; with forwarding off and transient_output=true, default emits that receipt. Status is queued, skipped, nothing to send, or not queued; never delivered. With both downstream switches off, emits no payload.",
+            "notes": "Blank template uses input text; otherwise replaces {input}. Escapes commands by default, truncates to max_length (1–3500 Telegram units, default 1000), validates destination and can skip repeats. Empty messages do not queue. unknown_destination fails; queue OSError gives outbox_unwritable, or not queued with Carry on. Invalid enabled Vault output key fails after queuing. Hermes delivery runs separately every 5 minutes when configured.",
+        },
+    },
+    "if_changed_node": {
+        "schema_version": 1,
+        "purpose": "Compares a value with last time, saves it, then goes Changed or No change",
+        "use_when": "Route on whether a plain value differs from the last value saved under the same name, across workflow runs on this machine.",
+        "not_for": "A read-only comparison, file-content watching, or comparing two current inputs: it saves the supplied value, including when unchanged.",
+        "side_effects": {
+            "possible": ["writes_files"], "delegated": False,
+            "note": "Compares and writes the local saved-values file under one lock, including first use and No change. Carry on can finish without a successful save. File references are compared as records, not by reading their file contents.",
+        },
+        "needs": {
+            "required": ["local_files"], "optional": [], "unresolved": False,
+            "note": "Needs a nonblank saved name, an upstream value or available Vault key, and writable saved-values storage. Scope is the workflow name by default, or All workflows on this machine; this is separate from the per-run Vault.",
+        },
+        "cost_class": "no_usage_fee",
+        "time_class": "variable",
+        "time_note": "Local file I/O and an exclusive saved-values lock determine the wait; no network call or polling loop.",
+        "execution_contract": {
+            "output_payload": "Exactly one route, changed or no_change, carrying the current input unchanged. First use saves then takes no_change by default (first_time=Changed overrides). transient_output=false suppresses data but preserves the chosen route and save. keep_for selects workflow-name scope or all workflows; names are trimmed and case-insensitive.",
+            "notes": "Exactly compares sorted-key JSON; Loosely removes whitespace and case-folds strings or canonical JSON. Values must be finite plain JSON within 64 KiB. Missing upstream/Vault input always errors. SavedValuesError (blank name/node_error, store_unwritable, store_unreadable, too_big) fails unless Carry on, which takes no_change without a successful save. Does not emit the previous value.",
+        },
+    },
 }
 
 #: Migration ledger: registered types still waiting for a reviewed record.
@@ -432,11 +497,11 @@ PENDING_REVIEW = frozenset({
     # Batch 2: data, control, meta and state
     "error_mux_node", "set_variable_node",
     "get_variable_node", "node_catalogue_node", "check_workflow_spec_node",
-    "remember_node", "recall_node", "if_changed_node",
+    "remember_node", "recall_node",
     # Batch 3: system, file, service, model and delegated
     "disk_space_node", "file_age_node", "git_status_node", "file_view_node",
-    "window_control_node", "http_request_node", "record_event_node",
-    "hermes_notify_node", "hermes_ask_node", "hermes_investigate_node",
+    "window_control_node", "record_event_node",
+    "hermes_ask_node", "hermes_investigate_node",
     "hermes_investigation_result_node", "ask_local_model_node", "ask_claude_node",
     "pick_one_node", "subworkflow_node",
     # Batch 4: hidden and timing (lighter record)
