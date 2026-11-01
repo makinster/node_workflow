@@ -13,6 +13,16 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Family 2 review fixes (2026-10-31)
+
+On `codex/family-two-review-fixes`, rebased onto main `784df48`, pause/resume now
+includes prepared children and supervisors recheck pauses after wakeup. The Family 2
+scorer uses only the Merge's joining obligations, and the picker test waits for its
+actual selection state. No frontend app defect was found. Saved run `000048` still
+has 10/10, 10/10, 3/4 and 1/2 fully correct cases; calibration keeps its existing
+failure and reports eight missing newer replies. No API calls or palette/guidance
+changes. Full suite: **5,255 passed / 187 skipped**. [Evidence and verification](audits/family_two_review_2026_10_31/README.md).
+
 ## Plain shared-check refusals (2026-10-31)
 
 From main `e7efdae`, shared flow refusals now put each finding's plain message and

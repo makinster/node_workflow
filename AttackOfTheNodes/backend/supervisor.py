@@ -354,10 +354,12 @@ class Supervisor:
             if self._stop_requested:
                 break
 
-            if self._pause_requested:
+            # A sibling can hit another breakpoint after resume wakes this
+            # task but before it gets a turn. Recheck the current pause flag.
+            while self._pause_requested and not self._stop_requested:
                 await self._resume_event.wait()
-                if self._stop_requested:
-                    break
+            if self._stop_requested:
+                break
 
             if await self._pause_for_breakpoint_if_needed():
                 if self._stop_requested:
@@ -508,7 +510,8 @@ class Supervisor:
         if not self._pause_requested:
             self.request_pause()
         self._publish_state_update()
-        await self._resume_event.wait()
+        while self._pause_requested and not self._stop_requested:
+            await self._resume_event.wait()
         self._skip_breakpoint_once_for = current_node_id
         return True
 
