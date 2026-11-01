@@ -35,12 +35,16 @@ def _branch_contexts(workflow_map, factory) -> Dict[str, List[BranchKey]]:
             contexts[node_id].append(context)
         if node.get("type") == BEACON_TYPE:
             continue
-        spawns = factory.spawns_branches(str(node.get("type") or ""))
-        children = [
-            (str(conn.get("target_node_id") or ""),
-             (node_id, str(conn.get("source_port") or "default")) if spawns else context)
-            for conn in node.get("connections", {}).get("outputs", [])
-        ]
+        outputs = node.get("connections", {}).get("outputs", [])
+        if factory.spawns_branches(str(node.get("type") or "")):
+            # Port order, not wiring order, so this picks the editor's branch key.
+            children = []
+            for port in factory.node_output_ports(node):
+                conn = next((c for c in outputs if c.get("source_port") == port), None)
+                if conn:
+                    children.append((str(conn.get("target_node_id") or ""), (node_id, port)))
+        else:
+            children = [(str(conn.get("target_node_id") or ""), context) for conn in outputs]
         stack.extend(reversed(children))
     return contexts
 
