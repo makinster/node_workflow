@@ -2771,7 +2771,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             "active_merge_id": merge_id,
             "active_label": f"Joins {friendly_label(self.workflow_map, merge_id)}",
             "active_port": self._upstream_branch_port_for_node(source_node_id),
-            "active_color_key": active_color_key,
+            "active_color_key": self._merge_node_branch_color_key(merge_id) or active_color_key,
             "depth": depth,
             "merge_slot": str(connection.get("target_port") or ""),
         }

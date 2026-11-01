@@ -825,7 +825,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             # UX6: the key hints show once, in the status bar at the bottom.
             if self.node_data.get("type") == MERGE_NODE_TYPE:
                 with VerticalScroll(id="node-config-scroll"):
-                    yield Label("Branches To Close", classes="form-label nav-section")
                     yield from self._compose_merge_inputs(config)
             elif self.node_data.get("type") == BRANCH_END_NODE_TYPE:
                 with VerticalScroll(id="node-config-scroll"):
@@ -3826,6 +3825,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selected_values |= set(self._merge_kept_close)
         capacity = len(ALL_PATH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
         if options or self._merge_kept_close:
+            yield Label("Branches To Close", classes="form-label nav-section")
             yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
         if self._merge_kept_close or self._merge_kept_carry:
             yield Static(
