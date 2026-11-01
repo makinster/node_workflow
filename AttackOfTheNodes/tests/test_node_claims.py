@@ -32,7 +32,7 @@ from tests.test_node_metadata_behavior import engine
 from tools.draft_trials.cases import PALETTE
 from backend.palette_selection import ADMITTED as DRAFTABLE
 
-# Reviewed records keep their full evidence; Merge Beacon has one but is not drafted.
+# Reviewed records keep their full evidence; Join Merge has one but is not drafted.
 ADMITTED = DRAFTABLE | {'branch_end_node'}
 
 FACTORY = NodeFactory()

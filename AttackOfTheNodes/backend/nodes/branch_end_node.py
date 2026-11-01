@@ -1,4 +1,4 @@
-"""Merge Beacon node: marks a branch as closed before a merge."""
+"""Join Merge node: marks a branch as closed before a merge."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -10,7 +10,7 @@ class BranchEndNode(Node):
     """Utility marker that passes input through and exposes a branch to Merge."""
 
     node_type: ClassVar[str] = "branch_end_node"
-    display_name: ClassVar[str] = "Merge Beacon"
+    display_name: ClassVar[str] = "Join Merge"
     description: ClassVar[str] = "Mark a long-distance join in the editor and pass this path's value on to Merge."
     # C4: fixed forwarding. The output is the input, so its type follows the
     # input (port_types traces through this node) and the editor shows a

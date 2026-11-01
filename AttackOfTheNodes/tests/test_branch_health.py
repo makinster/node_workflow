@@ -310,7 +310,7 @@ def test_validator_warns_for_unmerged_merge_beacon():
     assert result["success"] is True
     assert any(
         warning.get("node_id") == beacon_b
-        and "Merge Beacon is not connected to a merge node" in warning.get("message", "")
+        and "Join Merge is not connected to a merge node" in warning.get("message", "")
         for warning in result["warnings"]
     )
     print("test_validator_warns_for_unmerged_merge_beacon PASSED")

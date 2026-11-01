@@ -224,7 +224,7 @@ removal confirms discarding recovery data. No silent expiry is implemented.
 All plan previews are pure and commits reject graph/overlay drift.
 
 **Merge candidate selection is graph-position-constrained:** `merge_input_options()`
-must only offer a Merge Beacon to close on a `merge_node` when that beacon's
+must only offer a Join Merge to close on a `merge_node` when that beacon's
 owning branch node is upstream of (or unrelated to) the merge being configured.
 A branch node that only appears in the merge node's forward-reachable
 descendant set starts *after* this merge runs, so it cannot have closed by the
@@ -235,7 +235,7 @@ map, since that map's DFS stops at every beacon and never assigns a context to
 a merge node or anything downstream of one.
 
 **Editor selector coloring tracks the merge it connects to, not its own
-branch:** When a Merge Beacon is wired to a `merge_node`, the beacon's editor
+branch:** When a Join Merge is wired to a `merge_node`, the beacon's editor
 selector row (text + connector line) and its own gutter/numline color match
 the branch that *contains the merge node*, not the beacon's own branch. This
 keeps the editor view visually tying a beacon to its destination rather than

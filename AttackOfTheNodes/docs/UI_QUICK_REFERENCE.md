@@ -229,18 +229,18 @@ the identity and contract rules. Older Phase 17 layouts are historical.
 - Details panel should show the node's per-port I/O contract (see
   Node Standards: Portable contract and authoring boundaries).
 - Preserve selection, autoscroll, validation markers, breakpoint markers,
-  execution state, and Merge Beacon state indicators.
+  execution state, and Join Merge state indicators.
 
 ## Current Style Language
 
 - Graph-passed data is a dead-drop payload.
 - Named memory-bank data is the Vault.
-- `branch_end_node` is displayed to users as Merge Beacon.
+- `branch_end_node` is displayed to users as Join Merge.
 - Parallel Branch has 2–64 paths; Merge defaults to five slots and can grow.
   Branch width and the runtime nesting-depth limit are separate.
-- A Merge Beacon's selector row and gutter color follow the branch containing
+- A Join Merge's selector row and gutter color follow the branch containing
   the merge node it's connected to, not the beacon's own branch.
-- A merge node's config only offers Merge Beacons whose branch starts upstream
+- A merge node's config only offers Join Merges whose branch starts upstream
   of (or unrelated to) that merge — never one downstream of it.
 
 ## Colours

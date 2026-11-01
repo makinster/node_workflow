@@ -19,7 +19,7 @@ ISSUE_CODES: Dict[str, str] = {
     "deleted_node_stub": "A deleted-node record (tombstone) is still in the workflow.",
     "missing_node": "A connection or input source names a node that does not exist.",
     "unreachable": "A node cannot be reached from the Start node.",
-    "merge_beacon_unconnected": "A branch ends in a Merge Beacon that feeds no Merge.",
+    "merge_beacon_unconnected": "A branch ends in a Join Merge that feeds no Merge.",
     "invalid_rows": "A configured row list has missing, repeated or invalid entries.",
     "vault_only_connection": "A Vault-only output cannot be connected downstream.",
     # Shared flow preflight

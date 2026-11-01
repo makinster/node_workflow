@@ -73,7 +73,7 @@ Session Log entry.
 Drafts can now use `merge_node` for one shape only: one split, every path wired
 directly to one collecting Merge, with the result used downstream. Draft checks
 refuse anything beyond it in plain words through the one structural redraft, using
-the shared flow analysis. Wait Until, Merge Beacon and Set/Get stay out. Set 4's
+the shared flow analysis. Wait Until, Join Merge and Set/Get stay out. Set 4's
 F2-01/02 and calibration pairs 1/6 join the normal run and `--case-set all`; Stage 2
 stays opt-in. Sets 1, 2 and 3 keep their exact palettes and designer prompts. No
 API calls were made, so this shows nothing yet about drafting quality.
@@ -97,7 +97,7 @@ for evidence, remaining uncertainty and the proposed owner decision.
 
 Merge restores the elected continuing path to its opening Branch depth; six/eight
 sequential splits pass while excessive nesting remains refused. Merge and Wait
-Until now have final reviewed records. Merge Beacon stays an editor joining tool,
+Until now have final reviewed records. Join Merge stays an editor joining tool,
 not dev-only; all three stay outside drafter admission. Set/Get remain pending.
 There are 18 reviewed, 25 pending and 16 dev-only registered types.
 

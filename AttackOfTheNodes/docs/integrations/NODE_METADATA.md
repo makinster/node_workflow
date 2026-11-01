@@ -195,7 +195,7 @@ recursive catalogue expansion. JSON consumers resolve admission separately.
 The four new records distinguish search numbers/excerpts/whole-file reading,
 validation/extraction and bounded redacted packs/exact templates.
 
-### Dev/test-only nodes and Merge Beacon (2026-10-30)
+### Dev/test-only nodes and Join Merge (2026-10-30)
 
 Coverage is now a disjoint split: registered = reviewed records (16) | pending
 review (27) | dev/test only (16). `DEV_TEST_ONLY` in `node_metadata.py` is the
@@ -208,7 +208,7 @@ and no `use_instead` link may name them. Sleep, Start/End, the drafter's own too
 and the tombstone keep their earlier handling. `LIGHT_RECORD_TYPES` stays
 about record shape only.
 
-Merge Beacon (`branch_end_node`) is out of drafter admission: 11 original types
+Join Merge (`branch_end_node`) is out of drafter admission: 11 original types
 plus 4 helpers makes 15 admitted types and 20 role IDs. It stays reviewed, in the
 editor and in the picker, and keeps its claims evidence. Set Variable and Get
 Variable stay unadmitted.

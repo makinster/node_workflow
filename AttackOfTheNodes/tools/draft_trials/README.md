@@ -420,7 +420,7 @@ sets `system_node_folders` to that case's fixture directory only; its execution
 artifact records that setting. These settings are a read-scope check, not an OS
 sandbox. No new target writes files or contacts a service.
 
-Sets 1 and 2 retain their original types and role IDs, less Merge Beacon and its
+Sets 1 and 2 retain their original types and role IDs, less Join Merge and its
 role since 2026-10-30 (the owner took it out of drafts): eleven types, sixteen roles,
 including the word-count `needs_new_node` and email `outside_scope` cases.
 `fixtures/admission_baseline.json` pins those IDs, all original requests,
@@ -601,7 +601,7 @@ No judge prompt, frozen expected result, backend service or workflows/ edit.
 result used by a later step. **Stage 2** adds a path that splits again with its children
 joining the same Merge, Wait Until gates, and same-slot rejoins (either-or routes give one
 value; concurrent paths give a list). `merge_node` and `wait_until_node` are admitted.
-Merge Beacon and Set/Get Variable are not.
+Join Merge and Set/Get Variable are not.
 
 `--case-set 4` and `--case-set all` run F2-01 to F2-05. Calibration runs the frozen thirty
 pairs byte-for-byte, then the six set-4 pairs: 36 pairs / 72 judge calls.

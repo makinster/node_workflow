@@ -748,7 +748,7 @@ def validate_workflow(
             {
                 "node_id": health.terminus_node_id or health.branch_node_id,
                 "code": "merge_beacon_unconnected", "message": (
-                    "Merge Beacon is not connected to a merge node "
+                    "Join Merge is not connected to a merge node "
                     f"for branch port '{health.port}'"
                 ),
             }

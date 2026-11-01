@@ -1,6 +1,6 @@
 """C4: fixed forwarding is declared, traced and shown read-only.
 
-No-Op, Logger, Probe, Memory Snapshot, Merge Beacon and Repeat Counter pass
+No-Op, Logger, Probe, Memory Snapshot, Join Merge and Repeat Counter pass
 their input through unchanged (Sleep and Counter already declared it). The
 declaration (ui_hints pass_through + forwarded_input_port) makes the output
 type follow the input everywhere types are read.

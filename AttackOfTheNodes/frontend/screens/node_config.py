@@ -185,7 +185,7 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return Merge Beacon branches that this merge may close."""
+    """Return Join Merge branches that this merge may close."""
     merge_input_ports = list(ALL_PATH_PORTS)
     options: list[Dict[str, str]] = []
     branch_contexts = _branch_contexts_by_node(workflow_map)
@@ -223,7 +223,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             )
         used_merge_ports.add(str(target_port))
         output = _beacon_output_details(workflow_map, beacon_node)
-        beacon_name = beacon_node.get("alias") or "Merge Beacon"
+        beacon_name = beacon_node.get("alias") or "Join Merge"
         branch_label = context["branch_label"]
         branch_path = context.get("branch_path") or branch_label
         options.append(
@@ -4314,12 +4314,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
             return "\n".join(
                 [
-                    "Merge Beacon has no editable fields.",
+                    "Join Merge has no editable fields.",
                     f"Merges To Branch: {branch_label}",
                     f"Merge Node: {self._node_label(target_id, target_node)}",
                 ]
             )
-        return "Merge Beacon has no editable fields.\nStatus: open until connected to a Merge node."
+        return "Join Merge has no editable fields.\nStatus: open until connected to a Merge node."
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return str(node.get("alias") or node.get("type") or node_id)

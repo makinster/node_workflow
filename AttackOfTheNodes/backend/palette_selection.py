@@ -13,7 +13,7 @@ import re
 from .node_errors import NodeError
 
 # Admission is deliberately independent of metadata presence/catalogue visibility.
-# Merge Beacon (branch_end_node) is an editor join marker, deliberately not drafted.
+# Join Merge (branch_end_node) is an editor join marker, deliberately not drafted.
 ORIGINAL_PALETTE = frozenset('start_node end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
 ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path read_file write_file transform_text choose_path parallel_paths compose_text extract_json join persistent_state vault_state error_route'.split())
 HELPERS = frozenset('find_lines_node read_lines_node check_reply_node context_pack_node'.split())
@@ -322,7 +322,7 @@ def draft_stage_problems(flow, draft):
     if flow['back_edges']:
         problems.append('loops are not supported in drafts yet. Remove the connection that goes back to an earlier step.')
     if 'beacon' in kinds.values():
-        problems.append('Merge Beacons are not available in drafts. Wire each path directly to the Merge.')
+        problems.append('Join Merges are not available in drafts. Wire each path directly to the Merge.')
     for nid, profile in flow['profiles'].items():
         if kinds[nid] == 'wait' and (not profile['targets'] or any(kinds.get(t) == 'fork' for t in profile['targets'])):
             problems.append('Wait Until must name the step it waits for, not a split. Set target_node_ids to that step.')

@@ -71,7 +71,7 @@ def node_display_name(node_id: str, node: Dict[str, Any]) -> str:
     if node.get("type") == BRANCH_END_NODE_TYPE:
         alias = str(node.get("alias") or "").strip()
         if not alias or alias in {"Branch End", BRANCH_END_NODE_TYPE}:
-            return "Merge Beacon"
+            return "Join Merge"
         return alias
     if node.get("type") == TOMBSTONE_NODE_TYPE:
         config = node.get("config") or {}
