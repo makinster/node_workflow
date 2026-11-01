@@ -32,6 +32,8 @@ ISSUE_CODES: Dict[str, str] = {
     "flow_loop": "A control back edge requires unsupported draft loop semantics.",
     "flow_needs_review": "Flow shape cannot be proved within supported analysis limits.",
     "repeated_join_unsupported": "Drafts permit one Merge per inherited group until repeated joins are tested.",
+    "branch_depth_exceeded": "A split would exceed the effective branch nesting limit.",
+    "merge_slot_unconnected": "A direct Merge consumer references a slot with no connected producer.",
     # Ports and connections
     "undeclared_port": "A connection uses a port the node type does not have.",
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",

@@ -23,6 +23,8 @@ VALIDATION_LABELS: Dict[str, str] = {
     "deleted_node_stub": "Deleted node stub",
     "missing_node": "Missing node",
     "unreachable": "Unreachable node",
+    "branch_depth_exceeded": "Branch nesting too deep",
+    "merge_slot_unconnected": "Merge input not connected",
     "merge_outside_split": "Merge outside split",
     "merge_required_path_escape": "Merge path escapes",
     "merge_required_child_omitted": "Merge path may not launch",

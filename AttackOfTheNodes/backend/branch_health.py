@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from .flow_behaviors import (  # legacy constants remain importable by port_types
     BRANCH_NODE_TYPE, MERGE_NODE_TYPE, MERGE_BEACON_TYPE, END_NODE_TYPE,
-    DEFAULT_OUTPUT_NODE_TYPES, Kind, port_order, resolve_flow,
+    DEFAULT_OUTPUT_NODE_TYPES, Kind, port_order, resolve_flow, control_routes, exclusive_routes,
 )
 
 from dataclasses import dataclass
@@ -156,11 +156,11 @@ def _classify_branch(
             )
 
         profile = resolve_flow(node, factory)
-        if profile.exclusive:
+        outgoing = {route: target for route, target, _ in control_routes(node, profile)}
+        alternatives = exclusive_routes(profile, outgoing)
+        if alternatives:
             # Alternative routes do not spawn branches. Every alternative must
             # have a healthy destination; keep Beacon handling in the same walk.
-            outgoing = dict(_outgoing_edges(node))
-            alternatives = {p for batch in profile.batches for p in batch}
             route_health = [
                 _classify_branch(branch_node_id, port, outgoing.get(route), all_nodes,
                                  outputs, factory, visited)

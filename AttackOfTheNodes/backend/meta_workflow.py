@@ -212,7 +212,7 @@ def problem_report(diagnostics, manager=None, *, invalid=False, flow_findings=()
     return body()
 
 
-async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False, fail_on_disabled_output=False):
+async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False, fail_on_disabled_output=False, max_branch_depth=None):
     if type(fail_on_unreachable) is not bool:
         raise NodeError('invalid_config', 'Choose a boolean fail_on_unreachable option.')
     if type(fail_on_disabled_output) is not bool:
@@ -247,7 +247,7 @@ async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False
         message, details = problem_report(normalization_errors, manager, invalid=True)
         raise NodeError('spec_invalid', message, details=details)
     await asyncio.sleep(0)
-    checked = authoring.check_workflow_spec(factory, parsed)
+    checked = authoring.check_workflow_spec(factory, parsed, max_branch_depth=max_branch_depth)
     await asyncio.sleep(0)  # Stop must win before any publication.
     rejected_codes = set()
     if fail_on_unreachable:

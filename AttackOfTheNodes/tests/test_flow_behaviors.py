@@ -164,7 +164,7 @@ def test_back_edge_precedes_deadlock_diagnosis():
     report = analyze_flow(nodes, FACTORY, draft=True)
     assert errors(report) == {'flow_loop'}
     assert report.findings[0].message == 'loops are not supported in drafts yet'
-    assert report.back_edges and not report.dependencies
+    assert report.back_edges and report.dependencies  # Loop findings no longer suppress independent checks.
     assert analyze_flow(nodes, FACTORY).success
 
 
@@ -294,7 +294,7 @@ def test_authoring_surfaces_wait_errors_and_loop_wording():
     result = check_workflow_spec(FACTORY,spec)
     assert any(d['code'] == 'flow_loop' and d['message'] == 'loops are not supported in drafts yet'
                for d in result['diagnostics'])
-    assert not any(d['code'] == 'impossible_wait' for d in result['diagnostics'])
+    assert any(d['code'] == 'impossible_wait' for d in result['diagnostics'])  # Self-wait remains certain even in a loop.
 
 
 def test_existing_end_only_and_output_endpoint_workflows_remain_valid():

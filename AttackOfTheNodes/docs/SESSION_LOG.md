@@ -6,6 +6,21 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Family 2 checker repairs
+
+Worktree `/home/makin/src/aotn-family-two-checker`, branch
+`codex/family-two-checker-fixes`, clean base main `e7efdae`, rebased onto
+`784df48` (#175). The original checkout's unrelated dirty files were preserved.
+Loop findings now retain independent Wait checks; the existing lineage walk
+checks the effective depth budget and resets it after Merge. Direct collecting
+Merge consumers reject only provably unconnected slot references. Branch health
+shares success/error route exclusivity. New runs use automatic plans; local
+redraft fixtures verify plain slot/depth repairs. MasterState/Supervisor,
+palette, admission, guidance and trial-tool sources are unchanged.
+All 17 bundled graph verdicts match main; nothing newly refused. Flow claims
+re-execute 104 real-engine scenarios, plus generic receipt/source-pin refreshes.
+Full suite: **5,282 passed / 187 skipped**. No API/model calls or owner workflow writes. Full verification is recorded in the
+[task audit](audits/family_two_checker_fixes_2026_10_31/README.md).
 ## 2026-10-31 — Fix Family 2 pause/scorer races and picker timing
 
 Branch `codex/family-two-review-fixes`, worktree `/home/makin/src/family-two-review-fixes`,
