@@ -373,7 +373,7 @@ Text Output
 records formatted text and continues when connected; without a connection it
 ends naturally. File Manager, File Reader, File Writer and Window Control
 continue along connections.
-Merge Beacon participates in the Merge rendezvous; internal supervisor
+Join Merge participates in the Merge rendezvous; internal supervisor
 termination signals remain part of merge/recovery execution.
 
 Old File Manager/Writer completion flags are archived by

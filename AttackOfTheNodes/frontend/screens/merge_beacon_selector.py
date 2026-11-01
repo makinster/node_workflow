@@ -1,4 +1,4 @@
-"""Merge Beacon selector modal for jumping to merge nodes."""
+"""Join Merge selector modal for jumping to merge nodes."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
 class MergeBeaconSelectorScreen(KeymapScreenMixin, ModalScreen):
-    """Select a merge node to jump to from a Merge Beacon row."""
+    """Select a merge node to jump to from a Join Merge row."""
 
     KEYMAP = MERGE_BEACON_SELECTOR
     BINDINGS = bindings_for(KEYMAP)
@@ -32,7 +32,7 @@ class MergeBeaconSelectorScreen(KeymapScreenMixin, ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
-            yield Label("Merge Beacon", classes="modal-title")
+            yield Label("Join Merge", classes="modal-title")
             yield ListView(id="merge-beacon-list")
             yield Static("↑↓ navigate  ENTER select  ESC close", classes="modal-help")
             with Horizontal(classes="button-row"):

@@ -291,7 +291,7 @@ def test_prune_merge_node_not_deleted():
 
 
 def test_prune_pruned_branch_merge_beacon_is_deleted_not_orphaned():
-    """A Merge Beacon belongs to the one branch it closes — pruning that
+    """A Join Merge belongs to the one branch it closes — pruning that
     branch must delete the beacon too, not leave it dangling with zero
     connections. merge_node (still fed by the surviving kept branch via
     its own path into the merge) must survive."""
@@ -302,7 +302,7 @@ def test_prune_pruned_branch_merge_beacon_is_deleted_not_orphaned():
     wm.update_node_config(branch, {"branch_count": 2})
     keeper = wm.add_node("logger_node", alias="Keep")
     merge = wm.add_node("merge_node", alias="Merge")
-    beacon = wm.add_node("branch_end_node", alias="Merge Beacon")
+    beacon = wm.add_node("branch_end_node", alias="Join Merge")
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", keeper, "input")
     wm.connect(branch, "path_b", beacon, "input")
@@ -320,9 +320,9 @@ def test_prune_pruned_branch_merge_beacon_is_deleted_not_orphaned():
 
 
 def test_prune_keep_beacon_branch_drops_old_merge_output_before_tombstone():
-    """Keeping a Merge Beacon branch must not preserve its old merge output.
+    """Keeping a Join Merge branch must not preserve its old merge output.
 
-    Repro: branch path_a -> merge_node, path_b -> Merge Beacon -> same merge.
+    Repro: branch path_a -> merge_node, path_b -> Join Merge -> same merge.
     Delete the branch node and keep path_b. The merge on path_a is pruned, and
     later deleting the kept beacon must not make its tombstone point back to
     the old merge via pre-prune original_outputs.
@@ -362,7 +362,7 @@ def test_prune_keep_merge_branch_preserves_merge_downstream_nodes():
     """Keeping the branch that contains a merge must not prune past the beacon.
 
     Repro: branch path_a -> merge_node -> text_output_node, path_b ->
-    Merge Beacon -> same merge. Delete the branch node and keep path_a. The
+    Join Merge -> same merge. Delete the branch node and keep path_a. The
     beacon branch is pruned, but the kept merge and its downstream output stay.
     """
     from backend.validator import validate_workflow

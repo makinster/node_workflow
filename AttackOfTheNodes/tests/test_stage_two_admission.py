@@ -210,7 +210,7 @@ def test_the_stage_check_itself_names_merge_with_no_split_loops_and_beacons():
     assert any('loops are not supported' in p for p in draft_stage_problems(dict(flow, back_edges=[['show', 'split']]), spec))
     beacon = deepcopy(flow)
     beacon['profiles']['a']['kind'] = 'beacon'
-    assert any('Merge Beacons' in p for p in draft_stage_problems(beacon, spec))
+    assert any('Join Merges' in p for p in draft_stage_problems(beacon, spec))
     two = deepcopy(flow)
     two['merges']['again'] = deepcopy(two['merges']['join'])
     spec['connections'].append({'from': 'again.default', 'to': 'show.input'})

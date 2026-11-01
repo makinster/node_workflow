@@ -6,8 +6,8 @@ structure alone — no stored UI state. A "branch" is one outgoing edge from a
 of three states:
 
 - ``VALID``: the path reaches an end/output node, a ``merge_node`` (merged),
-  or a Merge Beacon (``branch_end_node``) that is connected to a ``merge_node``.
-- ``ENDED_UNMERGED``: the path reaches a Merge Beacon that is not connected to
+  or a Join Merge (``branch_end_node``) that is connected to a ``merge_node``.
+- ``ENDED_UNMERGED``: the path reaches a Join Merge that is not connected to
   a ``merge_node`` — the branch is marked complete but never merges.
 - ``FLOATING``: the path dead-ends with no valid output/end node and no Merge
   Beacon.

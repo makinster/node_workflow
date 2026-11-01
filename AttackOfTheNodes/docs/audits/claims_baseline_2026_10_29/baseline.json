@@ -2277,7 +2277,7 @@
       "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/merge_node.py",
-      "source_sha256": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
+      "source_sha256": "aee96f76db53e6716cd9eaa7ca725e732958512e57ce980908c0cb0a20737fff",
       "inputs": {
         "path_a": {
           "name": "Path A",
@@ -2710,7 +2710,7 @@
       "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/branch_end_node.py",
-      "source_sha256": "cc396e5ba624fa7924a2c2a5f93fe815eada539ee6e645fc0464f59eb9ef97e5",
+      "source_sha256": "43c0f1dfe147b837d6270e994df79d275bc0ab5422711bd218a40f926c6938f3",
       "inputs": {
         "input": {
           "name": "Input",

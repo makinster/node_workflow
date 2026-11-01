@@ -1,7 +1,7 @@
-"""Dev/test-only nodes and Merge Beacon: what each surface may and may not show.
+"""Dev/test-only nodes and Join Merge: what each surface may and may not show.
 
 Owner decisions 2026-10-30. The 16 dev/test-only types leave the normal picker
-and every drafter path but stay registered, loadable and runnable. Merge Beacon
+and every drafter path but stay registered, loadable and runnable. Join Merge
 stays in the editor and picker and only leaves the drafter.
 """
 import asyncio
@@ -207,7 +207,7 @@ async def test_saved_workflow_with_a_dev_node_loads_and_runs(engine):  # noqa: F
     assert result.errors == [] and result.final_state == 'FINISHED'
 
 
-# --- Merge Beacon leaves the drafter only ------------------------------------------------
+# --- Join Merge leaves the drafter only ------------------------------------------------
 
 def test_beacon_is_out_of_admission_roles_schemas_and_prompts():
     assert BEACON not in ORIGINAL_PALETTE and BEACON not in ADMITTED

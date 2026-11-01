@@ -453,7 +453,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             merge.admission_stage = 2
         if any(profiles[a.source_id].kind == Kind.BEACON for a in merge.arrivals) and draft:
             findings.append(Finding("error", "flow_needs_review", mid,
-                                    "Use direct connections to Merge here. Merge Beacons are supported in the editor, but not in drafts."))
+                                    "Use direct connections to Merge here. Join Merges are supported in the editor, but not in drafts."))
         waited = ", ".join(f"{a.path_name} ({a.slot})" for a in merge.arrivals)
         parts = [f'Merge "{name(mid)}": waits for {waited or "one incoming path"}.']
         for h in merge.handoffs:

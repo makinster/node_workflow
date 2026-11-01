@@ -30,7 +30,7 @@ literal `{input}` instead of a path. No prompt/spec fix or retry was attempted;
 this is not medium end-to-end proof.
 
 The designer uses existing nodes only. Its **drafting palette** is nine types:
-Start, End, Merge Beacon, Parallel Branch, User Text Input, Text Output,
+Start, End, Join Merge, Parallel Branch, User Text Input, Text Output,
 Text Transform, File Reader and File Write. The designer's own meta/helper nodes
 are additional existing types, not additions to that drafting palette.
 

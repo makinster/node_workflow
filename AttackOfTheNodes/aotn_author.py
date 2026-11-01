@@ -173,7 +173,7 @@ def _build_text(report: Dict[str, Any], check_only: bool) -> str:
             lines.append(f"Saved {report.get('name')!r} as {report.get('workflow_id')}")
             lines.append(f"  {report.get('path')}")
             for _ in report.get("added_beacons", ()):
-                lines.append("  Added a Merge Beacon so a path joins its Merge the way the editor shows it.")
+                lines.append("  Added a Join Merge so this path joins its Merge collector the way the editor shows it.")
     else:
         lines.append("Not written: fix the errors below.")
     for diagnostic in report["diagnostics"]:

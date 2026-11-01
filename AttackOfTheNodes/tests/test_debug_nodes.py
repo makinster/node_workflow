@@ -1172,7 +1172,7 @@ async def _test_editor_merge_node_delete_rewires_home_branch_and_disconnects_bea
         assert validation["success"] is True
         assert any(
             warning.get("node_id") == beacon
-            and "Merge Beacon is not connected to a merge node" in warning.get("message", "")
+            and "Join Merge is not connected to a merge node" in warning.get("message", "")
             for warning in validation["warnings"]
         )
 
@@ -2944,7 +2944,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         text = screen._branch_end_status_text()
         # Owner, 2026-10-14: names only; IDs have their own line.
         assert "Merges To Branch: Approve\n" in text
-        assert text.endswith("Merge Node: Merge") or "Merge Node: Merge\n" in text
+        assert text.endswith("Merge Node: Merge collector") or "Merge Node: Merge collector\n" in text
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -2959,7 +2959,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         screen.refresh_from_backend()
         details = screen.query_one("#node-details").display_text
         assert "Merges To Branch: Approve\n" in details
-        assert "Merge Node: Merge\n" in details
+        assert "Merge Node: Merge collector\n" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
 
@@ -3010,13 +3010,13 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         ]
         assert target_merge not in [row.get("node_id") for row in rows]
         beacon_cards = [card for card in app.query(NodeCard) if card.node_id == beacon]
-        assert "Merge Beacon" in beacon_cards[0].display_text.splitlines()[1]
+        assert "Join Merge" in beacon_cards[0].display_text.splitlines()[1]
         selector_card = app.query_one(MergeBeaconSelectCard)
         # The UX6 numbered suffix was rolled back (owner, 2026-10-14).
-        assert selector_card.active_label == "Merge"
+        assert selector_card.active_label == "Merge collector"
         assert selector_card.active_port == "path_a"
         assert selector_card.display_text.startswith("└─────")
-        assert " [ Merge ]" in selector_card.display_text
+        assert " [ Merge collector ]" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
         options = screen._merge_beacon_options(beacon)
@@ -6415,7 +6415,7 @@ async def _test_node_selector_uses_family_tabs():
         assert groups.get("Branch", 0) >= 2
         visible_types = {node["type"] for node in screen._visible_nodes}
         assert "merge_node" in visible_types  # Merge group of one, promoted
-        assert "branch_end_node" in visible_types  # direct-add Merge Beacon
+        assert "branch_end_node" in visible_types  # direct-add Join Merge
         assert "wait_until_node" in visible_types  # Wait / Timer, promoted
         assert "branch_node" not in visible_types  # behind the Branch group
 

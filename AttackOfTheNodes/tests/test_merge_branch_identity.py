@@ -5,7 +5,7 @@ branch context. Before UX1 any node with more than one output did, so a node
 inside a Branch path that shows an error path (HTTP Request then listed it),
 routes errors (Error Mux) or chooses a path (Conditional) changed the Merge
 option from ``<branch>:path_b`` to ``<node>:<port>``; a no-edit Merge save then
-emptied ``branches_to_close`` and the editor disconnected the Merge Beacon.
+emptied ``branches_to_close`` and the editor disconnected the Join Merge.
 """
 
 from __future__ import annotations

@@ -11,7 +11,7 @@ class MergeNode(Node):
     """Collects the delivered slot values after participating paths settle."""
 
     node_type: ClassVar[str] = "merge_node"
-    display_name: ClassVar[str] = "Merge"
+    display_name: ClassVar[str] = "Merge collector"
     description: ClassVar[str] = 'Wait for joining paths, collect their results by input slot, and continue once.'
     category: ClassVar[str] = NodeCategory.FLOW
     # The type's full list; one node has its first ``input_slots`` slots.

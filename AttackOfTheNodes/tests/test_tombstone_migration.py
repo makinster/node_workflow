@@ -101,7 +101,7 @@ def test_migrate_legacy_deleted_node_is_no_op_for_plain_branch_end():
 
     node = {
         "type": "branch_end_node",
-        "alias": "Merge Beacon",
+        "alias": "Join Merge",
         "config": {},
         "connections": {"inputs": [], "outputs": []},
     }

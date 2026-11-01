@@ -179,7 +179,7 @@ Variants have different port shapes, so they must be separate types
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Merge Beacon | Live | `branch_end_node` — branch-end flag setter for merge coordination |
+| Join Merge | Live | `branch_end_node` — branch-end flag setter for merge coordination |
 | End Branch | Planned | Silently terminates a branch path with no output. For paths that intentionally discard a route (e.g. the "no" path of a conditional that should do nothing). Replaces the legacy `end_node` concept at branch scope. |
 
 ### Section: Timing

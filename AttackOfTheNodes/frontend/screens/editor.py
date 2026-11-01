@@ -326,7 +326,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
     def on_merge_beacon_select_card_clicked(
         self, event: MergeBeaconSelectCard.Clicked
     ) -> None:
-        """Single click selects a Merge Beacon row; double click opens selector."""
+        """Single click selects a Join Merge row; double click opens selector."""
         node_list = self.query_one(NodeList)
         index = node_list.index_for_merge_beacon_select(event.beacon_node_id)
         if index is None:
@@ -354,7 +354,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             notifications.notify_info(self.app, "This path ends by joining the Merge")
             return
         if self._selected_insert_target_is_merge_beacon():
-            notifications.notify_info(self.app, "Merge Beacon is the end of this branch")
+            notifications.notify_info(self.app, "Join Merge is the end of this branch")
             return
         self._pending_node_add_mode = "insert"
         upstream = self._selector_upstream(self._source_for_insert_node())
@@ -3102,7 +3102,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         beacon_node = self.workflow_map.get_node_data(row["beacon_node_id"]) or {}
         merge_id = row.get("active_merge_id") or ""
         lines = [
-            f"Merge Beacon: {node_display_name(row['beacon_node_id'], beacon_node)}",
+            f"Join Merge: {node_display_name(row['beacon_node_id'], beacon_node)}",
             f"Connected Merge: {row.get('active_label') or '-'}",
             f"Step: {row.get('depth', '-')}",
             "",

@@ -634,7 +634,7 @@ class EditorWorkflowAdapter:
         )
 
     def _is_branch_prune_terminal(self, node: Dict[str, Any]) -> bool:
-        """A node that ends its path: a Merge Beacon, or a type that declares
+        """A node that ends its path: a Join Merge, or a type that declares
         ``terminates_branch`` (End). Output-family nodes (Text Output, File
         Manager, File Write, ...) continue along their connections
         (file_io_continuation_v1), so they are not path ends."""
@@ -653,12 +653,12 @@ class EditorWorkflowAdapter:
         tombstone itself.
 
         ``start_node`` is always a hard stop — it is never pruned. Terminal
-        branch nodes (Merge Beacons and types that declare
+        branch nodes (Join Merges and types that declare
         ``terminates_branch``, i.e. ``end_node``) are inclusive prune
         boundaries: the terminal on a non-kept branch is deleted, but traversal
         does not continue past it. Output-family nodes are not terminals; they
         continue along their connections, so pruning continues past them.
-        Merge Beacons also register their connected merge_node for orphan
+        Join Merges also register their connected merge_node for orphan
         cleanup. A node still reachable from Start through a surviving route
         (the kept path or anything else) is never pruned.
 
