@@ -118,7 +118,7 @@ later work; the checked delivery status is in Current State.
 | Vault | Named `MemoryBank` entries, `vault_write`, `membank_inputs` / `membank_outputs` |
 | Dead-drop payload | Transient data keyed by `(source_node_id, port)` |
 | Source | Upstream, Vault or Configured, where the node supports those choices |
-| Parallel Branch / Merge Beacon | `branch_node` / `branch_end_node` |
+| Parallel Branch / Join Merge | `branch_node` / `branch_end_node` |
 | Error path | Engine `error` output carrying a failure record |
 | Family / group | `primary_family` / frontend navigation `group`; the rename was cancelled |
 | Tombstone | Saved deleted-node record, retained for repair/restore |
