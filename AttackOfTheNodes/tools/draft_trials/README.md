@@ -671,3 +671,8 @@ redraft steps now allow 8,192. The judge also split a pair's one requirement int
 rows in runs 000048, 000049 and 000051, which the format check rejects however right the
 verdict; the judge prompt now asks for exactly one row per frozen requirement, with its
 id unchanged. That wording reaches every set, so the frozen designer pins were refreshed.
+
+Run 000052's analysis step also wrote requirements F2-04 never asked for: file text stored
+under a named Vault slot, and a completion record for each path. The judge enforced them
+against a correct draft. The analysis guidance now says Merge carries the results and joined
+paths finish once. Sets 1, 2 and 3 do not see this sentence.

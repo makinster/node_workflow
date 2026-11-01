@@ -342,3 +342,10 @@ def test_draft_steps_have_room_and_the_judge_writes_one_row_per_requirement():
     nodes = json.loads(runner.SPEC.read_text())['nodes']
     assert nodes['draft']['config']['max_tokens'] == nodes['draft_retry']['config']['max_tokens'] == 8192
     assert 'exactly one coverage row per frozen requirement' in nodes['judge_question']['config']['template']
+
+
+def test_analysis_does_not_invent_vault_or_per_path_end_requirements():
+    # Run 000052: F2-04's correct draft failed against requirements the request never made.
+    nodes = json.loads(runner.SPEC.read_text())['nodes']
+    for handle in ('analysis_question', 'resolve_question'):
+        assert 'do not require a Vault slot or a separate End' in nodes[handle]['config']['template']
