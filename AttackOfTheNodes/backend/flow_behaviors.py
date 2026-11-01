@@ -469,7 +469,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             labels = list(dict.fromkeys(p["path_name"] if schema["cardinality"] == "many"
                                         else name(p["source_id"]) for p in schema["producers"]))
             if schema["cardinality"] == "many":
-                parts.append(f'{slot}: list from {", ".join(labels)}.')
+                parts.append(f'{slot}: list from {", ".join(labels)}, always in that order.')
             elif len(labels) > 1:
                 parts.append(f'{slot}: one of {"/".join(labels)}.')
         parts.extend(f"{ending} ends; supplies no Merge value." for ending in merge.independent_ends)

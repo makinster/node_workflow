@@ -826,7 +826,7 @@
       "id": 4,
       "key": "F2-04",
       "required_stage": 2,
-      "request": "On one path read ROOT/source.txt. On a second path, wait until that read has finished, then show Ready. After both paths finish, show the file text and Ready together once, labelled File and Status.",
+      "request": "On one path read ROOT/source.txt. On a second path, wait until that read has finished, then show Ready on its own. After both paths finish, also show one combined message with the file text and Ready, labelled File and Status.",
       "expected_status": "ready",
       "good": {
         "format": "aotn-workflow/1",

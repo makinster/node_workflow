@@ -77,7 +77,7 @@ def test_r1_concurrent_same_slot_is_stable_many():
     assert schema['cardinality'] == 'many'
     assert [p['path_name'] for p in schema['producers']] == ['C','D']
     assert schema['presence'] == 'possible_missing' and not schema['index_labels_certified']
-    assert 'path_b: list from C, D.' in merge.summary
+    assert 'path_b: list from C, D, always in that order.' in merge.summary
 
 
 def exclusive(escape=False, conditional_fork=False, separate_slots=False):

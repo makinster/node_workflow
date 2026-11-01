@@ -12,7 +12,7 @@ REQUESTS = [
     'Read ROOT/report-a.txt and ROOT/report-b.txt in parallel. Show both contents once, labelled A then B, after both reads finish.',
     'Read ROOT/value.json, ROOT/flag.json and ROOT/note.txt at the same time. From value.json take the field named value, and from flag.json the field named flag. Show both and the complete note together, labelled Value, Flag and Note, after all three are ready.',
     'Read ROOT/slow.txt on one path. On a second path read ROOT/gather.txt, then split that path in two: one makes an uppercase copy, the other a lowercase copy. When the slow.txt read and both copies have finished, show all three together once, labelled Slow, Upper and Lower.',
-    'On one path read ROOT/source.txt. On a second path, wait until that read has finished, then show Ready. After both paths finish, show the file text and Ready together once, labelled File and Status.',
+    'On one path read ROOT/source.txt. On a second path, wait until that read has finished, then show Ready on its own. After both paths finish, also show one combined message with the file text and Ready, labelled File and Status.',
     'Read ROOT/note.txt in parallel with ROOT/choice.txt. If choice.txt is exactly yes, make the message Approved; otherwise make the message Needs review. Show the note and whichever message was chosen together once, labelled Note and Decision.',
 ]
 REFERENCE_NOTE = ('Run a slow step on A, such as a five-minute MCP call. On B gather resources, '
