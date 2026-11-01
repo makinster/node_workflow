@@ -116,24 +116,34 @@ async def test_retry_prompt_and_contracts_have_context_headroom():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('case_set,number', [(1, 7), (2, 1), (3, 1), (4, 2)])
-async def test_blocked_empty_draft_explains_stop_without_check_retry_or_save(tmp_path, case_set, number):
+@pytest.mark.parametrize('redraft', [False, True])
+async def test_blocked_empty_draft_explains_stop_without_check_retry_or_save(tmp_path, case_set, number, redraft):
     case = case_record(number, tmp_path / f'trial/cases/{number}/fixtures', case_set)
     good = good_draft(number, case['root'], case_set)
     blocked = dict(good, status='blocked', nodes={},
                    reason='The selected contracts cannot preserve the requested ordering.',
                    blocked_requirements=['r1: preserve ordering', 'r2: show both results'])
-    report = await runner.run_case(number, tmp_path / 'trial', tmp_path / 'library', case_set=case_set, replies=[
-        runner.requirements(case), blocked])
+    replies = [runner.requirements(case)]
+    if redraft:
+        replies.append(dict(good, nodes={}))
+    replies.append(blocked)
+    report = await runner.run_case(number, tmp_path / 'trial', tmp_path / 'library',
+                                   case_set=case_set, replies=replies)
     directory = tmp_path / f'trial/cases/{number}'
     run = json.loads((directory / 'designer-run.json').read_text())
     shown = '\n'.join(run['outputs'])
     assert blocked['reason'] in shown
     assert all(requirement in shown for requirement in blocked['blocked_requirements'])
     assert 'aotn build' not in shown
-    assert report['calls']['attempted'] == 2
-    assert not report['errors']
-    assert not report['draft_retry']['requested']
-    assert not any(step['handle'] in {'check', 'draft_retry', 'check_retry', 'judge', 'write'}
+    assert 'Workflow spec did not pass' not in shown
+    assert report['calls']['attempted'] == 2 + redraft
+    assert all(error['code'] == 'spec_invalid' and error['handled'] for error in report['errors'])
+    assert report['draft_retry']['requested'] == redraft
+    assert report['draft_retry']['attempted'] == int(redraft)
+    forbidden = {'check_retry', 'judge', 'write'}
+    if not redraft:
+        forbidden.update({'check', 'draft_retry'})
+    assert not any(step['handle'] in forbidden
                    for step in report['gate_evidence'] if step['status'] == 'running')
     assert not list((directory / 'drafts').glob('*'))
 

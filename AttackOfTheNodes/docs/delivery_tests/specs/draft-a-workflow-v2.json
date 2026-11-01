@@ -1975,6 +1975,30 @@
       "config": {
         "template": "{draft_text}"
       }
+    },
+    "retry_status": {
+      "type": "json_path_node",
+      "alias": "Read redraft status",
+      "config": {
+        "path": "status",
+        "default_value": ""
+      }
+    },
+    "retry_blocked": {
+      "type": "conditional_node",
+      "alias": "Did the redrafter stop?",
+      "config": {
+        "condition_type": "equals",
+        "left_value_source": "input",
+        "right_value": "blocked"
+      }
+    },
+    "retry_for_check": {
+      "type": "concat_node",
+      "alias": "Keep exact redraft for check",
+      "config": {
+        "template": "{draft_text}"
+      }
     }
   },
   "connections": [
@@ -2436,7 +2460,7 @@
     },
     {
       "from": "draft_retry.default",
-      "to": "check_retry.input"
+      "to": "retry_status.input"
     },
     {
       "from": "check_retry.default",
@@ -2528,6 +2552,34 @@
     },
     {
       "from": "blocked_text.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "retry_status.default",
+      "to": "retry_blocked.input"
+    },
+    {
+      "from": "retry_blocked.true",
+      "to": "blocked_text.input"
+    },
+    {
+      "from": "retry_blocked.false",
+      "to": "retry_for_check.input"
+    },
+    {
+      "from": "retry_for_check.default",
+      "to": "check_retry.input"
+    },
+    {
+      "from": "retry_status.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "retry_blocked.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "retry_for_check.error",
       "to": "error_message.input"
     }
   ]
