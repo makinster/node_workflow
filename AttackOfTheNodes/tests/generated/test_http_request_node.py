@@ -30,7 +30,7 @@ def test_http_request_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'missing_url', 'timeout', 'network', 'http_status']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'missing_url', 'unsupported_url_scheme', 'timeout', 'network', 'http_status']
 
 
 async def _run_http(url="", method="GET", body=""):
@@ -77,7 +77,7 @@ async def test_http_request_mocked_get_success():
     mock_response.__enter__ = lambda s: s
     mock_response.__exit__ = MagicMock(return_value=False)
 
-    with patch("urllib.request.urlopen", return_value=mock_response):
+    with patch("backend.nodes.io.http_request_node._open_http", return_value=mock_response):
         data = await _run_http(url="http://example.com/test")
 
     assert data.get("default") == "hello world"
@@ -88,7 +88,7 @@ async def test_http_request_mocked_url_error_is_a_network_error():
     import urllib.error
     from unittest.mock import patch
 
-    with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timeout")):
+    with patch("backend.nodes.io.http_request_node._open_http", side_effect=urllib.error.URLError("timeout")):
         data = await _run_http(url="http://example.com/test")
 
     assert data["error"].code == "network"

@@ -361,7 +361,7 @@ def test_a_returned_file_is_handed_to_the_parent():
                 seen["path"] = path
                 return
 
-    with patch("urllib.request.urlopen", return_value=_fake_response()):
+    with patch("backend.nodes.io.http_request_node._open_http", return_value=_fake_response()):
         result, _ = run(parent, during=during)
     assert result.final_state == "FINISHED", result.errors
     assert seen["exists_after_child"] is True  # survived the child's cleanup
@@ -536,7 +536,7 @@ def test_stop_reaches_the_child_before_its_tasks_are_cancelled():
         service.stop()  # a second Stop must not cut the child's cleanup short
         seen["child"] = child_master
 
-    with patch("urllib.request.urlopen", return_value=_fake_response()):
+    with patch("backend.nodes.io.http_request_node._open_http", return_value=_fake_response()):
         result, service = run(parent, during=stop, timeout=5)
     assert result.final_state == "STOPPED"
     assert seen["child"].run_context.stop_requested

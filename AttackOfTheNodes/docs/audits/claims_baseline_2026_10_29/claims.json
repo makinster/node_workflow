@@ -14,7 +14,7 @@
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
     "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
     "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
-    "backend/node_metadata.py": "be6f27835b385eb189a3be43f16de999396df11ea33fead3ba838953ffec876d",
+    "backend/node_metadata.py": "128483028fb7316042957dd06acc09126cdaf22c4c16fb891250bd4dcd7bf470",
     "backend/nodes/ai/ask_claude_node.py": "a2e3d19151aa02688f239c65d3a6889ea9ea3e396532c2a466a485f42d268b65",
     "backend/nodes/ai/ask_local_model_node.py": "906a74138630732b7e18ade131c245dd26eacc12cce0497d038998a0120cd363",
     "backend/nodes/ai/hermes_ask_node.py": "519833d8e42e2c52d203f6a02ba75409cedd11ce8f1fa530b7fa9f6992e25120",
@@ -64,7 +64,7 @@
     "backend/nodes/io/hermes_investigate_node.py": "8a99c4acc6cd62e6813b56f9f0e740286fb671c0951f7a5539a2b341c77e78c8",
     "backend/nodes/io/hermes_investigation_result_node.py": "0e2c16104b931e5be2417476599c1a10f95e3d54804f6a36d5e1f623e49ec367",
     "backend/nodes/io/hermes_notify_node.py": "97303bfffce271e4de5118ce7d0ac9ba24601d6484a721a0a436bfef11b98284",
-    "backend/nodes/io/http_request_node.py": "8ce5ee8bc814c88affb897911067971e37b7060ee0ab51acaff6084009582ee4",
+    "backend/nodes/io/http_request_node.py": "a7fdace3a724280a22f386942ffa60fa7dbac3dc289d8008d78c39d72724a162",
     "backend/nodes/io/read_lines_node.py": "6f020a494b83c810060c07866feaddece719eed69ff96b57bc9a3bc5331fbe16",
     "backend/nodes/io/record_event_node.py": "6ebe4ca1ae32c9a52c8c14067041eaed1f1331bc63577a3967a0849a72770f14",
     "backend/nodes/io/window_control_node.py": "ce4084fafd00e64204543eb9c03fa8cff6324f628b0b2d498268e48048fba39b",
@@ -88,15 +88,15 @@
     "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
     "tests/flow_claim_scenarios.py": "6f1f68df6030b9e259467eb896c134f954a0bb71d17c4e728e6dc84384717245",
     "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
-    "tests/node_claim_scenarios.py": "a350677a26e5cf99fa98ce2b764e16f57e6089a65ce106a055cf8a3076c40dc7",
+    "tests/node_claim_scenarios.py": "940d387096dfb2d9624d958186507a9aead95ccff58665207803d61de56172ce",
     "tests/test_family_two_checker_fixes.py": "ef3aacc30ffdcc7fe1196423c52884328d7843c70b65be4cf5a9725ffb254c59",
-    "tests/test_family_two_records.py": "9c01fc74f9e1b55b0f6fd18dd2220cbaa687eaee35d0f7613cbbda0946bfeb75",
+    "tests/test_family_two_records.py": "da81c072a5beccfed78e74b79cd33e4e870ad580fb3031ce0ec4e86475a0dbca",
     "tests/test_flow_claims.py": "1c9babd1ce4a824d8055c651b11f1b80a6f5ccf115c2cad572f12cb4a8c70cc6",
     "tests/test_helper_family_admission.py": "c8760240d15d86f6e33a7528076a6200176d4c68f1b21cea9f610b1354880ffa",
     "tests/test_helper_family_followup.py": "3d1e778d7873da68c03c6649ce4b7ff55488b3a67bcbb875a89efa7e1a091aa4",
     "tests/test_merge_arrival_runtime.py": "6ef32f956034ee51f5c3e14e445b9d731f657d23cc0bc2c60292230600adb871",
     "tests/test_merge_plan_integration.py": "1b3734cf541b740c4c8fb93ab9f0539ad75a5f50be0feac31fb630c3690039d2",
-    "tests/test_node_claims.py": "042a51260bfe5b945711848c5dc5cf6f17a4acbd6636f44e07afa60e8e8ee9eb",
+    "tests/test_node_claims.py": "6570d3441cc76b1800dc757e14d975ead27c1d92203af1653dd95df429ddb84b",
     "tests/test_node_metadata_behavior.py": "e2b58bd0c0c66b603f0226fc688ca1dcdcfcb2981da5294fb3c741d22dda87e5",
     "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a",
     "tools/draft_trials/admission.py": "c13e837f9b4ef8ed60d6ccbf7f4f4f220e1940dff19a42c009c333d7b70daa65",
@@ -1321,7 +1321,7 @@
     },
     {
       "node_type": "hermes_notify_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "notification_queue",
       "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
       "claims": {
@@ -1362,7 +1362,7 @@
     },
     {
       "node_type": "http_request_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "http_response",
       "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
       "claims": {
@@ -1407,8 +1407,8 @@
     },
     {
       "node_type": "if_changed_node",
-      "reviewed": false,
-      "boundary": "local context and temporary files",
+      "reviewed": true,
+      "boundary": "local temporary saved-values file",
       "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
       "claims": {
         "ports": {

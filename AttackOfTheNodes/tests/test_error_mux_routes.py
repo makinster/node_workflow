@@ -313,7 +313,10 @@ def test_errors_are_offered_in_plain_words():
 
     definitions = upstream_error_definitions(factory, workflow_map, mux)
     assert [d["code"] for d in definitions] == [
-        "node_error", "missing_url", "timeout", "network", "http_status"]
+        "node_error", "missing_url", "unsupported_url_scheme", "timeout", "network", "http_status"]
+    scheme = next(d for d in definitions if d["code"] == "unsupported_url_scheme")
+    assert friendly_error_choice(scheme) == (
+        "[unsupported_url_scheme] Only http:// and https:// URLs are supported, including redirects.")
     assert friendly_error_name("http_status") == "HTTP status"
     assert friendly_error_name("missing_url") == "Missing URL"
     assert friendly_error_name("node_error") == "Unexpected failure"
@@ -326,7 +329,7 @@ def test_errors_are_offered_in_plain_words():
 
     choices = recovery_choices(definitions, {"routes": [_route("r", ["gone_code"])]})
     assert [value for _, value in choices] == [
-        "node_error", "missing_url", "timeout", "network", "http_status", "gone_code"]
+        "node_error", "missing_url", "unsupported_url_scheme", "timeout", "network", "http_status", "gone_code"]
     assert choices[-1] == ("[gone_code] Not raised by the connected node", "gone_code")
     # "Any other error" is no longer offered; an existing one stays visible
     # (ticked) so it can be unpicked.

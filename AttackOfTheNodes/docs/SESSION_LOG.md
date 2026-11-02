@@ -6,6 +6,37 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-11-01 — PR #184 HTTP scheme boundary follow-up
+
+Merged current main `a21f8cd` into `codex/review-network-notify-change` before the
+reviewer fix. HTTP Request now refuses non-HTTP(S) URLs and redirects with
+`unsupported_url_scheme`, before any non-HTTP dispatch. A private opener checks
+all five standard redirect statuses and later hops. No local URL read, live HTTP
+call, paid call or real Telegram message was used in the new checks.
+
+No existing HTTP tests/specs/workflows relied on other schemes. Existing file-URI
+Stash parsing and an unrelated FTP validation-negative case remain unchanged.
+The record keeps networking required for actual HTTP requests and local files
+optional only for response-file mode; POST transmission remains explicit. Pins
+and claims receipts were rechecked/refreshed. Main `c5983d2` was then merged;
+its parallel fixes and documentation are preserved. Final full suite:
+**5,420 passed / 187 skipped**, 78.92 seconds. [Evidence](audits/network_notify_change_2026_11_01/README.md).
+
+## 2026-11-01 — Review HTTP, notification and saved-comparison metadata
+
+Worktree `/home/makin/src/review-network-notify-change`, branch
+`codex/review-network-notify-change`, based on main `23a518e`. Added records for
+`http_request_node`, `hermes_notify_node` and `if_changed_node` after reading their
+execute paths, file/queue/store helpers and delivery contract. New claims use
+fake HTTP responses and isolated queues/stores; transport escape is blocked.
+Metadata coverage is 21 reviewed, 22 pending and 16 dev-only types.
+
+The records distinguish POST data/remote effects, run-file lifetime, queue receipts
+from delivery on the separately configured 5-minute Hermes cycle, and persistent
+compare/save with first-use, comparison and failure routes. Source/content digests
+and claims evidence were refreshed; runtime and all draft boundaries are unchanged.
+No paid calls or real Telegram messages. Full suite: **5,353 passed / 187 skipped**. [Verification](audits/network_notify_change_2026_11_01/README.md).
+
 ## 2026-11-01 — Blocked redraft and paused input status
 
 Clean worktree `/home/makin/src/nw-blocked-redraft-paused-input`, branch
