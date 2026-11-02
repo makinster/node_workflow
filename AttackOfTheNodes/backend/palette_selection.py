@@ -145,6 +145,15 @@ def validate_analysis(factory, analysis):
     if not isinstance(candidates, list) or len(candidates) > MAX_IDS or not isinstance(roles, list) or len(roles) > 32:
         raise NodeError('selection_invalid', 'Selection exceeds candidate/role limits.')
     candidates, roles = _merge_repeats(candidates, 'type_id'), _merge_repeats(roles, 'role')
+    # A reply can list only the Vault role here while each node still names its
+    # own step. Declare those steps from the nodes; nothing new is invented.
+    if {r.get('role') for r in roles if isinstance(r, dict)} == {'vault_state'}:
+        roles = _merge_repeats(roles + [
+            dict(role=c['role'], reason=c.get('reason'), requirement_ids=list(c.get('requirement_ids') or []))
+            for c in candidates
+            if isinstance(c, dict) and isinstance(c.get('role'), str) and c.get('type_id') not in SUPPORT['always']
+            and any(c.get('type_id') in composition for composition in ROLE_TYPES.get(c['role'], ()))
+        ], 'role')
     # Only repair an undeclared role when identity gives one unambiguous
     # declared alternative. Start/End are already in the support closure.
     declared = {r.get('role') for r in roles

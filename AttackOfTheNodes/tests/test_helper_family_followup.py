@@ -246,6 +246,30 @@ def test_candidate_is_reassigned_to_its_unique_declared_role():
     assert value==original
 
 
+def _vault_only_reply(candidates, vault_ids):
+    rows = [dict(type_id=kind, role=role, requirement_ids=ids, reason='A step') for kind, role, ids in candidates]
+    ids = sorted({i for _, _, row in candidates for i in row})
+    return dict(status='ready', requirements=[dict(id=i, kind='action') for i in ids],
+                selection=dict(candidates=rows, roles=[dict(role='vault_state', reason='Keeps values', requirement_ids=vault_ids)]))
+
+
+def test_steps_named_only_on_nodes_are_declared_when_roles_lists_only_the_vault():
+    value=_vault_only_reply([('start_node','start',['r1']),('user_text_input_node','ask_text',['r1','r2']),
+                             ('concat_node','compose_text',['r3']),('text_output_node','show_text',['r4'])],['r1','r2','r3'])
+    original=deepcopy(value)
+    result=selection.validate_analysis(NodeFactory(),value)
+    assert [r['role'] for r in result['roles']]==['vault_state','ask_text','compose_text','show_text']
+    assert next(c for c in result['candidates'] if c['type_id']=='concat_node')['role']=='compose_text'
+    assert 'start_node' not in [c['type_id'] for c in result['candidates']]
+    assert value==original
+
+
+def test_a_node_role_that_does_not_fit_its_type_is_still_refused_with_the_vault_only():
+    value=_vault_only_reply([('text_output_node','read_file',['r1'])],['r1'])
+    with pytest.raises(NodeError,match='Candidate roles'):
+        selection.validate_analysis(NodeFactory(),value)
+
+
 def test_ambiguous_candidate_role_still_errors():
     value=analysis(['show_saved_path','error_route'],[('text_output_node','show_text')])
     with pytest.raises(NodeError,match='Candidate roles'):
