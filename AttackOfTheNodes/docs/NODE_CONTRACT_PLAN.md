@@ -10,6 +10,17 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
+PR #184 reviewer follow-up (2026-11-01, main `a21f8cd` merged first): HTTP Request
+now enforces HTTP/HTTPS for initial URLs and redirects. Scheme-refusal claims,
+record wording and affected source/execute pins are refreshed. No scheme-dependent
+HTTP workflow migration or draft admission change was needed. See the
+[review audit](audits/network_notify_change_2026_11_01/README.md).
+
+Metadata coverage follow-up (2026-11-01, from `23a518e`): HTTP Request, Notify me
+and If changed records and executable claims added for foundational review. The
+three stay unadmitted; roles, draft prompts and trial sets are unchanged.
+[Record/evidence review](audits/network_notify_change_2026_11_01/README.md).
+
 Family-2 review follow-up (2026-10-31, rebased onto `784df48`): prepared child
 supervisors obey pause/resume, wakeups recheck pause, and the logical scorer uses
 Merge joining obligations. The picker test waits for actual callback completion.

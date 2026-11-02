@@ -29,7 +29,7 @@ def spec():
 
 def test_final_membership_preserves_state_nodes_beacon_and_admission():
     assert {'merge_node','wait_until_node'}<=set(NODE_METADATA)
-    assert len(NODE_METADATA)==18 and len(PENDING_REVIEW)==25 and len(DEV_TEST_ONLY)==16
+    assert len(NODE_METADATA)==21 and len(PENDING_REVIEW)==22 and len(DEV_TEST_ONLY)==16
     for kind in ['set_variable_node','get_variable_node']:
         assert kind in PENDING_REVIEW and kind not in DEV_TEST_ONLY
     assert 'branch_end_node' not in DEV_TEST_ONLY and 'branch_end_node' not in ADMITTED

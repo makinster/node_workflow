@@ -13,6 +13,18 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Three metadata records, without admission (2026-11-01)
+
+Based on main `23a518e`, HTTP Request, Notify me and If changed have source-checked
+metadata and executable claims. Inventory is **21 reviewed / 22 pending / 16
+dev-only**. HTTP's internet reach and POST effects, Notify's local queue versus
+Hermes's 5-minute delivery cycle, and If changed's persistent compare/save are
+explicit. Reviewer follow-up merged main `a21f8cd`, then `c5983d2`, and restricts HTTP Request to
+HTTP/HTTPS for initial URLs and every redirect; other schemes fail a plain coded
+error before opening. Draft admission, roles, prompts and trial sets are unchanged. No paid calls or Telegram messages were sent.
+Full scheme-follow-up suite: **5,420 passed / 187 skipped**.
+[Evidence and test counts](audits/network_notify_change_2026_11_01/README.md).
+
 ## Blocked redraft and paused input status (2026-11-01)
 
 On `codex/blocked-redraft-paused-input`, from clean main `23a518e`, a blocked

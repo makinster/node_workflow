@@ -445,7 +445,7 @@
           "notes": "POST only: config body vs input (string/bytes/JSON); GET ignores body."
         }
       },
-      "runtime_sha256": "a8ffbbbdffe8b10339d7f96c136c9a5d02fdd76c75c67d62f178d9fbb62f94fc",
+      "runtime_sha256": "1ce74eb487ef814b8f5dfaeef38b3517305cea316fb5e0c2c741914dcb7b703b",
       "runtime_file": "backend/nodes/io/http_request_node.py"
     },
     {

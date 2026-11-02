@@ -4,8 +4,27 @@ Owner-approved design: `agent_channel/node-metadata-plan/` (PLAN, DECISIONS,
 MIGRATION; all 15 recommendations accepted 2026-10-28, with debug nodes and
 the tombstone getting a lighter record). Batch 1 shipped 2026-10-29: the
 registry, catalogue schema 2 and reviewed records for the twelve Draft a
-workflow v2 palette types. The current inventory is 18 reviewed, 25 pending and 16 dev-only types.
+workflow v2 palette types. The current inventory is 21 reviewed, 22 pending and 16 dev-only types.
 Final Merge/Wait records do not admit them to the drafter.
+
+## Network, notifications and saved comparisons (2026-11-01)
+
+Reviewed records now cover HTTP Request, Notify me and If changed. This changes
+metadata coverage only: these three types remain outside `ADMITTED`, role lists,
+draft prompts and trial sets. No node runtime code changed.
+
+HTTP Request accepts only HTTP/HTTPS URLs, including redirects, and can reach the
+internet; other schemes fail `unsupported_url_scheme` before opening. POST sends configured or incoming data and
+may change remote state. Networking is required for real requests; only response-file mode needs local
+files and writes a run-owned file. Endpoint
+charges and network duration vary. Notify me queues locally; Hermes sends on its
+separately configured 5-minute cycle. A queued receipt is not delivery confirmation.
+If changed compares and saves across runs under a lock, including on No change;
+it is not read-only and does not inspect file-reference contents.
+
+The source-bound manifest cites transport-mocked and isolated-store claims. Generic
+and real-engine claims receipts were deliberately re-exported and compared. See
+[review scope and verification](../audits/network_notify_change_2026_11_01/README.md).
 
 ## Flow extension (block 3)
 

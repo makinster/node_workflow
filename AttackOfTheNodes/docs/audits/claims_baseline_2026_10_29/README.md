@@ -3,10 +3,12 @@
 Originally captured from `439e614` for PR #151, then refreshed from
 `ee0bca449425eaa23792b08f442ac3fd81e6b2fb` after the owner's four decisions.
 The original Scaffolding scope is historical. The block-3 refresh adds final
-Merge/Wait review status and source hashes without changing admission.
+Merge/Wait review status and source hashes without changing admission. The
+[2026-11-01 refresh](../network_notify_change_2026_11_01/README.md) adds HTTP Request,
+Notify me and If changed review status; no admission or runtime behavior changes.
 
 [`baseline.json`](baseline.json) is the refreshed source-reviewed snapshot of
-all 59 types: 18 reviewed records, 25 pending and 16 dev-only. It records declared ports,
+all 59 types: 21 reviewed records, 22 pending and 16 dev-only. It records declared ports,
 retained defaults, current authoring acceptance, execute support and LF-normalized
 source hashes. The original pre-repair snapshot remains in PR #151's Git history.
 Absent `to` means the legacy implicit downstream route. Tombstone is registered
@@ -46,8 +48,8 @@ it always forwards the file reference and build/check reject explicit switches.
 | `find_lines_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding; match_count: vault |
 | `get_variable_node` | pending | none | default: implicit downstream |
 | `git_status_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
-| `http_request_node` | pending | none | default: implicit downstream |
-| `if_changed_node` | pending | T | changed, no_change: downstream |
+| `http_request_node` | reviewed | none | default: implicit downstream |
+| `if_changed_node` | reviewed | T | changed, no_change: downstream |
 | `image_generation_node` | pending | none | default: implicit downstream |
 | `hermes_investigation_result_node` | pending | V,T,D | default: downstream/vault; optional forwarding; state: vault |
 | `json_path_node` | reviewed | none | default: implicit downstream |
@@ -58,7 +60,7 @@ it always forwards the file reference and build/check reject explicit switches.
 | `branch_end_node` | reviewed | none | default: implicit downstream |
 | `no_op_node` | pending | none | default: implicit downstream |
 | `node_catalogue_node` | pending | V,T | default: downstream/vault |
-| `hermes_notify_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
+| `hermes_notify_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `branch_node` | reviewed | none | path_a…path_bl (64 ports): implicit downstream |
 | `probe_node` | pending | none | default: implicit downstream |
 | `random_branch_node` | pending | none | path_a, path_b: implicit downstream |

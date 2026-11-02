@@ -562,6 +562,89 @@
       "verifier": "paused-input-resume-local-recheck",
       "reviewed": "2026-11-01",
       "source_revision": "23a518ec74e745c9291013b8480521230111bbd0"
+    },
+    "http_request_node": {
+      "sources": {
+        "backend/nodes/io/http_request_node.py": "a7fdace3a724280a22f386942ffa60fa7dbac3dc289d8008d78c39d72724a162",
+        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
+        "tests/test_network_notify_change_metadata.py": "9cd10a8c10d1959bd2223bad29fd1b58e1f186969e97e66bb894d8be09be6ddf",
+        "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
+        "tests/test_http_request_schemes.py": "06c1cde82a2ce4ff013eeaf1acd6f26361e94caf85336baf99f5a00d18c0cfc2"
+      },
+      "tests": [
+        "tests/test_network_notify_change_metadata.py::test_http_post_sends_input_and_optional_bearer",
+        "tests/test_network_notify_change_metadata.py::test_http_configured_body_and_get_no_body",
+        "tests/test_network_notify_change_metadata.py::test_http_file_response_lifetime",
+        "tests/test_network_notify_change_metadata.py::test_http_coded_transport_errors",
+        "tests/test_network_notify_change_metadata.py::test_http_missing_url_or_file_run_never_calls_transport",
+        "tests/test_network_notify_change_metadata.py::test_reviewed_effects_do_not_admit_nodes_to_drafts",
+        "tests/test_http_request_schemes.py::test_initial_non_http_scheme_fails_before_any_request",
+        "tests/test_http_request_schemes.py::test_redirect_non_http_scheme_is_a_plain_error_without_following",
+        "tests/test_http_request_schemes.py::test_http_https_and_relative_redirects_still_work",
+        "tests/test_http_request_schemes.py::test_later_redirect_to_data_is_rejected_after_an_allowed_hop"
+      ],
+      "content_sha256": "d3203bae5b7eedc6decbf41a5e06a00d0edbffbf6f53522aca7558b2b41c5cf8",
+      "author": "network-notify-change-record-author",
+      "verifier": "http-scheme-source-and-transport-claims-recheck",
+      "reviewed": "2026-11-01",
+      "source_revision": "29922430b48e1912455069f21a0f904618fb7603"
+    },
+    "hermes_notify_node": {
+      "sources": {
+        "backend/nodes/io/hermes_notify_node.py": "97303bfffce271e4de5118ce7d0ac9ba24601d6484a721a0a436bfef11b98284",
+        "backend/hermes_folder.py": "ef342db6194becf37517cdc39439663cd77fc0f21af373e24dd383e3b05070b2",
+        "integrations/hermes/_aotn_drain.py": "d669c3951671551a9dd588077d8b3600ba0281d0931677bb00faa09fdcf58d40",
+        "integrations/hermes/aotn-drain-home.sh": "1b597b5f2607d460429d1ab8fe6a75994d146eb9aa8e6f630201208fda1da7af",
+        "docs/integrations/HERMES_SHARED_FOLDER.md": "378aa69ef9b23c3adab14c32b790957edfca5d9388fb233e5ed09d287c491185",
+        "integrations/hermes/README.md": "945d190060151ae0db419556e17910adc5dd232ae63849fe0f35dbf88e68bf39",
+        "tests/test_network_notify_change_metadata.py": "9cd10a8c10d1959bd2223bad29fd1b58e1f186969e97e66bb894d8be09be6ddf",
+        "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936"
+      },
+      "tests": [
+        "tests/test_network_notify_change_metadata.py::test_notify_queues_receipt_but_forwards_wire_even_with_vault_source",
+        "tests/test_network_notify_change_metadata.py::test_notify_output_contract",
+        "tests/test_network_notify_change_metadata.py::test_notify_queue_failure_is_not_delivery",
+        "tests/test_hermes_notify.py::test_outside_text_is_made_harmless_unless_commands_are_allowed",
+        "tests/test_hermes_notify.py::test_send_to_must_be_a_name_in_options",
+        "tests/test_hermes_notify.py::test_skip_repeats_within_the_window",
+        "tests/test_hermes_notify.py::test_nothing_to_send_queues_nothing",
+        "tests/test_network_notify_change_metadata.py::test_reviewed_effects_do_not_admit_nodes_to_drafts"
+      ],
+      "content_sha256": "d29eeac36153ac0ea2d50d8d99ccb40d7ad18a2fa9ce183b615de8377b0937d6",
+      "author": "network-notify-change-record-author",
+      "verifier": "http-scheme-source-and-transport-claims-recheck",
+      "reviewed": "2026-11-01",
+      "source_revision": "29922430b48e1912455069f21a0f904618fb7603"
+    },
+    "if_changed_node": {
+      "sources": {
+        "backend/nodes/data/if_changed_node.py": "c8917e197bb130d744fffa144488bc603cfa7d2c6aaa12505e1a7d0da3db8a54",
+        "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
+        "backend/persistence.py": "ff2825b667add5eea3ba5e04739ad94a4db983af96e634b2abba471aa5242f8a",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
+        "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
+        "tests/test_network_notify_change_metadata.py": "9cd10a8c10d1959bd2223bad29fd1b58e1f186969e97e66bb894d8be09be6ddf",
+        "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
+        "tests/node_claim_scenarios.py": "940d387096dfb2d9624d958186507a9aead95ccff58665207803d61de56172ce",
+        "tests/test_node_claims.py": "6570d3441cc76b1800dc757e14d975ead27c1d92203af1653dd95df429ddb84b"
+      },
+      "tests": [
+        "tests/test_network_notify_change_metadata.py::test_if_changed_saves_across_runs_and_compares_before_routing",
+        "tests/test_network_notify_change_metadata.py::test_if_changed_first_use_and_suppression_still_save",
+        "tests/test_network_notify_change_metadata.py::test_if_changed_store_failure_route",
+        "tests/test_saved_values.py::test_blank_names_and_big_values_are_refused",
+        "tests/test_saved_values.py::test_finding_2_a_damaged_record_is_refused_and_never_dropped",
+        "tests/test_node_claims.py::test_if_changed_suppression_preserves_route_and_saved_value",
+        "tests/test_network_notify_change_metadata.py::test_reviewed_effects_do_not_admit_nodes_to_drafts",
+        "tests/test_network_notify_change_metadata.py::test_if_changed_blank_name_follows_save_failure_policy",
+        "tests/test_network_notify_change_metadata.py::test_if_changed_missing_input_is_not_hidden_by_carry_on"
+      ],
+      "content_sha256": "fd77d13f41531971ca5f017a78f4b3ea8d7c7ac9612a2cdb32dad78104ef99e6",
+      "author": "network-notify-change-record-author",
+      "verifier": "http-scheme-source-and-transport-claims-recheck",
+      "reviewed": "2026-11-01",
+      "source_revision": "29922430b48e1912455069f21a0f904618fb7603"
     }
   }
 }

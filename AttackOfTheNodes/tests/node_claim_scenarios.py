@@ -47,7 +47,7 @@ CASES = {
  'read_lines_node': {'config': {'input': 1, 'file': '$text'}},
  'remember_node': {'config': {'name': 'claims'}},
  'recall_node': {'config': {'name': 'claims', 'starting_value': 'COMPUTED'}},
- 'if_changed_node': {'config': {'name': 'claims'}},
+ 'if_changed_node': {'config': {'name': 'claims'}, 'boundary': 'local temporary saved-values file'},
  'record_event_node': {'config': {'event_name': 'claims', 'summary': 'COMPUTED'}, 'boundary': 'event_store'},
  'hermes_notify_node': {'boundary': 'notification_queue'},
  'hermes_investigate_node': {'config': {'input': 'COMPUTED', 'investigate': 'Check it'}, 'boundary': 'investigation_queue'},
