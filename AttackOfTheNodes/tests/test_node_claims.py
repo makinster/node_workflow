@@ -115,7 +115,7 @@ def boundaries(monkeypatch):
         value = BytesIO(b'COMPUTED')
         value.headers = {'Content-Type': 'text/plain'}
         return value
-    monkeypatch.setattr(urllib.request, 'urlopen', response)
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', response)
 
 
 def fixtures(tmp_path):

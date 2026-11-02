@@ -74,6 +74,9 @@ errors:
   - code: missing_url
     description: "No URL is configured."
     retryable: false
+  - code: unsupported_url_scheme
+    description: "Only http:// and https:// URLs are supported, including redirects."
+    retryable: false
   - code: timeout
     description: "The server did not answer within the timeout."
     retryable: true

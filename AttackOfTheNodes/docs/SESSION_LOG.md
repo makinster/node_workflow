@@ -6,6 +6,20 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-11-01 — PR #184 HTTP scheme boundary follow-up
+
+Merged current main `a21f8cd` into `codex/review-network-notify-change` before the
+reviewer fix. HTTP Request now refuses non-HTTP(S) URLs and redirects with
+`unsupported_url_scheme`, before any non-HTTP dispatch. A private opener checks
+all five standard redirect statuses and later hops. No local URL read, live HTTP
+call, paid call or real Telegram message was used in the new checks.
+
+No existing HTTP tests/specs/workflows relied on other schemes. Existing file-URI
+Stash parsing and an unrelated FTP validation-negative case remain unchanged.
+The record keeps networking required for actual HTTP requests and local files
+optional only for response-file mode; POST transmission remains explicit. Pins
+and claims receipts were rechecked/refreshed. [Evidence](audits/network_notify_change_2026_11_01/README.md).
+
 ## 2026-11-01 — Review HTTP, notification and saved-comparison metadata
 
 Worktree `/home/makin/src/review-network-notify-change`, branch

@@ -511,7 +511,7 @@ async def test_http_request_failures_carry_declared_codes(failure, code):
     node.config["url"] = "http://example.invalid/"
     done: List[Dict[str, Any]] = []
     errors: List[Exception] = []
-    with patch("urllib.request.urlopen", side_effect=failure):
+    with patch("backend.nodes.io.http_request_node._open_http", side_effect=failure):
         await node.execute(_http_context(done, errors))
     assert done == []
     assert errors[0].code == code

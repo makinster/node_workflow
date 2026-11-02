@@ -19,8 +19,9 @@ Based on main `23a518e`, HTTP Request, Notify me and If changed have source-chec
 metadata and executable claims. Inventory is **21 reviewed / 22 pending / 16
 dev-only**. HTTP's internet reach and POST effects, Notify's local queue versus
 Hermes's 5-minute delivery cycle, and If changed's persistent compare/save are
-explicit. Node runtime code, draft admission, roles, prompts and trial sets are
-unchanged. No paid calls or Telegram messages were sent.
+explicit. Reviewer follow-up merged main `a21f8cd` and restricts HTTP Request to
+HTTP/HTTPS for initial URLs and every redirect; other schemes fail a plain coded
+error before opening. Draft admission, roles, prompts and trial sets are unchanged. No paid calls or Telegram messages were sent.
 Full suite: **5,353 passed / 187 skipped**.
 [Evidence and test counts](audits/network_notify_change_2026_11_01/README.md).
 

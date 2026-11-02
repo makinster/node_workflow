@@ -23,7 +23,7 @@ def no_real_transports(monkeypatch):
         raise AssertionError('External transport is forbidden in metadata claims')
     monkeypatch.setattr(socket.socket, 'connect', forbidden)
     monkeypatch.setattr(subprocess, 'Popen', forbidden)
-    monkeypatch.setattr('urllib.request.urlopen', forbidden)
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', forbidden)
 
 
 def http_reply(body, content_type='text/plain'):
@@ -44,7 +44,7 @@ async def test_http_post_sends_input_and_optional_bearer(value, body, content_ty
     def response(request, timeout):
         calls.append((request, timeout))
         return http_reply(b'caf\xe9', 'text/plain; charset=latin-1')
-    monkeypatch.setattr('urllib.request.urlopen', response)
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', response)
     node, ctx, _, done, errors = runner('http_request_node', dict(
         url='https://example.invalid/collect', method='POST', body_source='input',
         auth_token_secret='service-token'), value)
@@ -65,7 +65,7 @@ async def test_http_configured_body_and_get_no_body(method, expected, monkeypatc
     def response(request, timeout):
         assert request.data == expected
         return http_reply(b'\xff')
-    monkeypatch.setattr('urllib.request.urlopen', response)
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', response)
     node, ctx, _, done, errors = runner('http_request_node', dict(
         url='https://example.invalid/', method=method, body='configured body'), 'ignored wire')
     await node.execute(ctx)
@@ -75,7 +75,7 @@ async def test_http_configured_body_and_get_no_body(method, expected, monkeypatc
 @pytest.mark.asyncio
 @pytest.mark.parametrize('keep,succeeded,survives', [(False, True, False), (True, True, True), (False, False, True)])
 async def test_http_file_response_lifetime(keep, succeeded, survives, tmp_path, monkeypatch):
-    monkeypatch.setattr('urllib.request.urlopen', lambda *args, **kwargs: http_reply(b'\x00\xffraw', 'application/octet-stream'))
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', lambda *args, **kwargs: http_reply(b'\x00\xffraw', 'application/octet-stream'))
     node, ctx, _, done, errors = runner('http_request_node', dict(
         url='https://example.invalid/', response_mode='file', keep_response_file=keep))
     ctx.run_session = RunSession('http-claim', files_root=tmp_path)
@@ -102,7 +102,7 @@ async def test_http_file_response_lifetime(keep, succeeded, survives, tmp_path, 
 async def test_http_coded_transport_errors(failure, code, monkeypatch):
     def response(*args, **kwargs):
         raise failure
-    monkeypatch.setattr('urllib.request.urlopen', response)
+    monkeypatch.setattr('backend.nodes.io.http_request_node._open_http', response)
     node, ctx, _, done, errors = runner('http_request_node', dict(url='https://example.invalid/'))
     await node.execute(ctx)
     assert not done and len(errors) == 1 and errors[0].code == code

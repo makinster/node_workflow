@@ -2,7 +2,9 @@
 
 Base: main `23a518e`; branch `codex/review-network-notify-change` in
 `/home/makin/src/review-network-notify-change`. Foundational scope: reviewed records
-and executable claims only. No runtime/default/port/error definitions changed.
+and executable claims. Initial head `f436524` changed metadata only; the reviewer
+follow-up below also restricts HTTP Request URLs and adds its scheme error.
+Defaults, ports and draft admission are unchanged.
 
 ## Source review
 
@@ -64,7 +66,7 @@ assert that none of the three types is admitted or present in role candidates;
 existing frozen-designer and admission checks remain in the full suite. The new
 records are available to catalogue/inspection clients without authorizing drafts.
 
-## Verification
+## Initial metadata-head verification
 
 Focused source/metadata/node/store checks plus receipt exporters: **330 passed**.
 A final source recheck clarified that Carry on can suppress a blank-name save
@@ -80,3 +82,61 @@ The initial full run found the missing explicit If changed boundary declaration
 (5,348 passed / 187 skipped / one failure); it was added without relaxing the
 registry gate. That full suite then passed 5,349 tests / 187 skipped before the
 four final cases were added.
+
+## Reviewer follow-up: restrict HTTP Request schemes
+
+Merged main `a21f8cd` into this branch before editing. The reviewer correctly
+identified that unrestricted urllib could read `file:` and `data:` URLs despite
+the record requiring networking. The runtime now accepts only `http` and `https`.
+A missing URL retains `missing_url`; any other scheme or missing scheme fails
+`unsupported_url_scheme` with: **Only http:// and https:// URLs are supported.**
+The node validates before building a request/opener, reading Secrets or requiring
+a response-file run session. Rejected URLs cannot read a local file.
+
+A private opener installs an HTTP-only redirect handler without replacing urllib's
+global opener. It checks every redirect hop before following it, including the
+301/302/303/307/308 aliases and subsequent hops. Rejected redirects close the
+response without dispatching another request. HTTP, HTTPS, relative paths and
+scheme-relative redirects retain urllib's ordinary behavior. This also replaces
+urllib's default FTP-redirect allowance with the same plain coded rejection.
+
+The helper spec and generated error-declaration assertion include the new
+non-retryable error. Metadata now explicitly limits URLs/redirects to HTTP(S),
+requires networking for actual requests, limits local-file needs to file response
+mode, and keeps POST data transmission explicit. Existing HTTP test doubles moved
+from global `urlopen` to this node's private `_open_http` boundary; their URLs,
+response expectations, routing and cleanup assertions were preserved.
+
+### Scheme dependency search
+
+Before adding the negative fixtures, tracked JSON/YAML node configs and the
+Python tests/specs/workflows were searched for unsupported schemes. No existing
+HTTP Request dependency on a non-HTTP(S) URL was found. The three explicit tracked
+HTTP Request workflow URLs are:
+
+- `examples/catch_http_errors.json`: `https://unreachable.invalid/data`.
+- `examples/fetch_and_save.json`: `https://example.com`.
+- `integrations/hermes/h2-http-watchdog.json`: `http://127.0.0.1:8765/health`.
+
+Other-scheme occurrences are unrelated and unchanged: `tests/test_stash.py` and
+`backend/paste_parser.py` support file-URI pastes; the Stash proposal documents
+that format. `tests/test_local_model.py` uses an FTP URL as an invalid service-base
+case. There were no existing `data:text` HTTP fixtures. New file/data/FTP cases
+are explicit refusal regressions, not migrated workflows.
+
+### Verification and pins
+
+`tests/test_http_request_schemes.py` exercises the real urllib opener/redirect
+dispatch with fake HTTP/HTTPS handlers and forbidden file/data/FTP/socket handlers.
+No live HTTP request or local URL read occurs. Initial bad schemes (text/file
+response modes), all five redirect statuses, valid redirect forms and a later
+bad redirect after a valid hop are covered. Before the fix: **33 failed, 20 passed**;
+with the later-hop case added: **54 pass**. Existing HTTP/routing/lifecycle/child
+workflow focused checks also pass.
+
+Record/source digests, the HTTP source-menu execute pin and the generic source
+baseline were refreshed after rechecking the code. Generic/flow receipts were
+re-exported deliberately; only source hashes changed from their post-main-merge
+versions, with every observation and claim outcome unchanged. Other record
+attestations affected by shared test-file changes were rechecked. The final
+focused evidence run passed **261 tests**. Full-suite result pending.

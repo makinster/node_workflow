@@ -422,7 +422,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
     "http_request_node": {
         "schema_version": 1,
         "purpose": "Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)",
-        "use_when": "Fetch a URL, including an internet endpoint, or POST configured text or an incoming value to a service and use its response.",
+        "use_when": "Fetch an HTTP(S) URL, including an internet endpoint, or POST configured text or an incoming value to a service and use its response.",
         "not_for": "A read-only local probe, a browser session, or automatic retries. POST sends data and the endpoint can change remote state.",
         "side_effects": {
             "possible": ["writes_files", "spends_money", "changes_external_state", "sends_data"],
@@ -431,7 +431,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         },
         "needs": {
             "required": ["network"], "optional": ["credentials", "local_files"], "unresolved": False,
-            "note": "A configured URL is required. auth_token_secret optionally supplies a Secrets-store bearer token. File response mode needs a run session and writable run-files storage; endpoint authentication depends on the service.",
+            "note": "Real HTTP(S) requests need networking; redirects must also use HTTP(S). Optional auth_token_secret supplies a Secrets bearer token. Only file response mode needs local files: a run session and writable run-files storage.",
         },
         "cost_class": "variable",
         "cost_note": "No built-in usage fee; the configured endpoint may charge for requests or POST actions.",
@@ -439,7 +439,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_note": "Synchronous network I/O can block the event loop. The socket timeout defaults to 10 seconds; response size and total duration are not capped.",
         "execution_contract": {
             "output_payload": "default: response text decoded using Content-Type charset (UTF-8 fallback, replacement errors), or a {type, ref_key, path, lifetime} file reference to streamed raw bytes. File mode requires run_session; run-owned files are deleted on successful run cleanup unless keep_response_file=true; failed/stopped runs retain them.",
-            "notes": "GET has no body. POST body_source=config sends body text; input sends UTF-8 text, raw bytes, or JSON for other values (None sends empty bytes). Optional bearer token comes from Secrets. missing_url, timeout, network and http_status are coded errors; http_status details include status, URL and up to 4096 response bytes decoded as UTF-8. Other exceptions use the generic node error. No retry loop.",
+            "notes": "Only HTTP/HTTPS URLs and redirects; other schemes fail unsupported_url_scheme before opening. GET has no body. POST sends configured text or input as UTF-8 text, raw bytes or JSON (None: empty bytes). Optional Secrets bearer token. Errors: missing_url, timeout, network, http_status; status details include status, URL and up to 4096 response bytes decoded as UTF-8. Other exceptions use the generic node error. No retry loop.",
         },
     },
     "hermes_notify_node": {

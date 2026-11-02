@@ -13,8 +13,10 @@ Reviewed records now cover HTTP Request, Notify me and If changed. This changes
 metadata coverage only: these three types remain outside `ADMITTED`, role lists,
 draft prompts and trial sets. No node runtime code changed.
 
-HTTP Request can reach the internet; POST sends configured or incoming data and
-may change remote state. Response-file mode writes a run-owned file. Endpoint
+HTTP Request accepts only HTTP/HTTPS URLs, including redirects, and can reach the
+internet; other schemes fail `unsupported_url_scheme` before opening. POST sends configured or incoming data and
+may change remote state. Networking is required for real requests; only response-file mode needs local
+files and writes a run-owned file. Endpoint
 charges and network duration vary. Notify me queues locally; Hermes sends on its
 separately configured 5-minute cycle. A queued receipt is not delivery confirmation.
 If changed compares and saves across runs under a lock, including on No change;
