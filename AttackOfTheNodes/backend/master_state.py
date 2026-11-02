@@ -29,6 +29,7 @@ from .events import (
     TERMINATE_WORKFLOW_REQUESTED,
     WORKFLOW_STATE_UPDATE,
     WorkflowState,
+    SupervisorState,
 )
 from .contracts import ContractError, resolve_inputs, return_rows, start_rows, workflow_revision
 from .error_handler import ErrorHandler, unhandled_errors
@@ -435,7 +436,12 @@ class MasterState:
             return
         for supervisor in self._run.live_supervisors.values() if self._run else ():
             supervisor.request_resume()
-        self._set_state(WorkflowState.RUNNING)
+        # A prompt can open while paused, and resuming does not answer it.
+        waiting = any(
+            supervisor.state in (SupervisorState.WAITING_FOR_INPUT, SupervisorState.AWAITING_RECOVERY)
+            for supervisor in self._run.live_supervisors.values()
+        ) if self._run else False
+        self._set_state(WorkflowState.WAITING_FOR_INPUT if waiting else WorkflowState.RUNNING)
         for child in list(self._children):
             child.resume()
 

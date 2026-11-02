@@ -464,3 +464,53 @@ def test_barriers_keep_runtime_wait_semantics_and_finish_symbols(barrier):
             assert sorted(attempt["status"] for attempt in arrivals) == ["absorbed", "done"]
             assert sum(attempt.get("arrival_outcome") == "absorbed" for attempt in arrivals) == 1
     asyncio.run(asyncio.wait_for(check(), timeout=15))
+
+
+@pytest.mark.parametrize("pause_before_prompt", [False, True])
+@pytest.mark.parametrize("answer_before_resume", [False, True])
+def test_resume_preserves_unanswered_prompt_status(pause_before_prompt, answer_before_resume):
+    async def check():
+        from backend.events import NODE_EXECUTION_UPDATE, USER_INPUT_NEEDED, WORKFLOW_STATE_UPDATE
+        app, master, wm, memory, bus = make_app()
+        start = wm.add_node("start_node")
+        node = wm.add_node("user_text_input_node")
+        end = wm.add_node("end_node")
+        wm.connect(start, "default", node, "input")
+        wm.connect(node, "default", end, "input")
+        app._on_backend_event = lambda payload=None: None
+        app._user_input_modal_open = True
+        requests, states = [], []
+        bus.subscribe(USER_INPUT_NEEDED, requests.append)
+        bus.subscribe(WORKFLOW_STATE_UPDATE, lambda p: states.append(p["state"]))
+        if pause_before_prompt:
+            # Pause the in-flight input node before it publishes its prompt.
+            bus.subscribe(NODE_EXECUTION_UPDATE, lambda p: master.pause()
+                          if p["node_id"] == node and p["status"] == "running" and not requests else None)
+        assert await master.start_workflow()
+        try:
+            await until(lambda: bool(requests))
+            if not pause_before_prompt:
+                master.pause()
+            assert master.state.value == "PAUSED"
+            branch = requests[0]["branch_id"]
+            assert master.waiting_for_input(branch)
+            assert app.node_statuses[node] == "waiting"
+            if answer_before_resume:
+                master.submit_user_input(branch, "answer")
+                await until(lambda: app.node_statuses[node] == "done")
+                assert master.state.value == "PAUSED"
+                assert app.node_statuses.get(end, "idle") == "idle"
+            master.resume()
+            expected = "RUNNING" if answer_before_resume else "WAITING_FOR_INPUT"
+            assert master.state.value == expected
+            assert states[-1] == expected
+            if not answer_before_resume:
+                assert app.node_statuses[node] == "waiting"
+                assert master.waiting_for_input(branch)
+                master.submit_user_input(branch, "answer")
+            await master.wait_for_completion()
+            assert app.node_statuses[node] == app.node_statuses[end] == "done"
+        finally:
+            master.stop()
+            await master.wait_for_completion()
+    asyncio.run(asyncio.wait_for(check(), timeout=15))
