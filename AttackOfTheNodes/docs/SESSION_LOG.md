@@ -18,7 +18,9 @@ No existing HTTP tests/specs/workflows relied on other schemes. Existing file-UR
 Stash parsing and an unrelated FTP validation-negative case remain unchanged.
 The record keeps networking required for actual HTTP requests and local files
 optional only for response-file mode; POST transmission remains explicit. Pins
-and claims receipts were rechecked/refreshed. [Evidence](audits/network_notify_change_2026_11_01/README.md).
+and claims receipts were rechecked/refreshed. Main `c5983d2` was then merged;
+its parallel fixes and documentation are preserved. Final full suite:
+**5,420 passed / 187 skipped**, 78.92 seconds. [Evidence](audits/network_notify_change_2026_11_01/README.md).
 
 ## 2026-11-01 — Review HTTP, notification and saved-comparison metadata
 

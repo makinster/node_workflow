@@ -85,7 +85,9 @@ four final cases were added.
 
 ## Reviewer follow-up: restrict HTTP Request schemes
 
-Merged main `a21f8cd` into this branch before editing. The reviewer correctly
+Merged main `a21f8cd` into this branch before editing. After the first green
+full suite, main `c5983d2` was also merged, preserving its editor/status fixes,
+blocked-redraft helpers and existing pins. Draft files match that main exactly. The reviewer correctly
 identified that unrestricted urllib could read `file:` and `data:` URLs despite
 the record requiring networking. The runtime now accepts only `http` and `https`.
 A missing URL retains `missing_url`; any other scheme or missing scheme fails
@@ -139,4 +141,15 @@ baseline were refreshed after rechecking the code. Generic/flow receipts were
 re-exported deliberately; only source hashes changed from their post-main-merge
 versions, with every observation and claim outcome unchanged. Other record
 attestations affected by shared test-file changes were rechecked. The final
-focused evidence run passed **261 tests**. Full-suite result pending.
+focused evidence run passed **261 tests**. The HTTP scheme plus error-selector
+follow-up check passed **55 tests**. Full suite before the later main merge:
+**5,409 passed / 187 skipped**, 59.15 seconds. Early full runs exposed the selector's
+old expected error-code lists; both now assert the added code without relaxing
+checks. One overlapping verification attempt collected during merge resolution and was
+not a valid check. An overlapping combined-main run then hit an existing UI
+timing assertion in `test_f_follows_a_running_node_on_a_path_not_shown` (the expected
+running node had already finished); that test passed independently with unchanged
+source. The full suite was rerun without overlapping runs on the resolved head.
+Final combined-main app-directory `python -m pytest -q -n auto`: **5,420 passed,
+187 skipped**, 78.92 seconds. Local links and `git diff --check` pass. No paid
+calls, live node HTTP calls or real Telegram messages were used.
