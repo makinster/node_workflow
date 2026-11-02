@@ -8,7 +8,7 @@
     "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
     "backend/hermes_investigations.py": "680eb4669943a8ea0e23b4136c5c1c7d89008c16421e2ab336eb6e950de642ca",
     "backend/integrations/claude.py": "d8c4f36f6e07b355f1d19bf881ee3fbbe1c32104655942281b9b6d9ec7803c3d",
-    "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+    "backend/master_state.py": "ae1489c5f51211dca93fbb6e1d8f4dc9572c475217bf1cfde8e62c9be7b12089",
     "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
     "backend/meta_workflow.py": "4517d7ba279f460f79703f0997c8dc6e587773a81c693467fda57fa8babc815b",
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",

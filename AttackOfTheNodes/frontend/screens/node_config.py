@@ -569,12 +569,13 @@ def selected_merge_ports(workflow_map, node_id, options, selected):
         wired[id(option)] = _connected_merge_target_port(beacon, node_id)
         if wired[id(option)]:
             used.add(wired[id(option)])
+            key = f"{option['branch_id']}:{option['branch_port']}"
+            if key in selected:
+                assignments.setdefault(key, wired[id(option)])
     for option in options:
         key = f"{option['branch_id']}:{option['branch_port']}"
-        if key not in selected:
-            continue
-        if wired[id(option)]:
-            assignments[key] = wired[id(option)]
+        # Either-or routes on one branch share one key, so they share one slot.
+        if key not in selected or key in assignments:
             continue
         preferred = option.get("port")
         port = preferred if preferred in ALL_PATH_PORTS and preferred not in used else next((port for port in ALL_PATH_PORTS if port not in used), None)

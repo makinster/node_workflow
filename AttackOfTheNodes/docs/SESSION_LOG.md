@@ -35,6 +35,39 @@ compare/save with first-use, comparison and failure routes. Source/content diges
 and claims evidence were refreshed; runtime and all draft boundaries are unchanged.
 No paid calls or real Telegram messages. Full suite: **5,353 passed / 187 skipped**. [Verification](audits/network_notify_change_2026_11_01/README.md).
 
+## 2026-11-01 — Blocked redraft and paused input status
+
+Clean worktree `/home/makin/src/nw-blocked-redraft-paused-input`, branch
+`codex/blocked-redraft-paused-input`, from main `23a518e`. Mock tests reproduced
+blocked redrafts losing their reason in all four sets. Three existing-type helper
+nodes and one rewired connection reuse the first-draft blocked message; the
+non-blocked redraft still checks without creating a retry loop. Every existing
+node config and prompt remains unchanged.
+
+Real-engine tests reproduced Resume publishing RUNNING for an unanswered prompt
+opened before or during pause. Resume now derives waiting status from live
+supervisors. Four cases cover both prompt timings and answering before/after
+Resume, including the existing rule that answering during pause does not run
+the next node. The node's waiting display and workflow status events are checked.
+
+Hash refreshes, after local source review and executable verification:
+
+- `tools/draft_trials/fixtures/admission_baseline.json`: `original` and `helpers`
+  configured-designer digests in both `stage_1` and `stage_2`, using the same
+  configured-spec canonical SHA-256 calculation as the pinned tests. Stage/case/
+  palette data and guidance are unchanged.
+- `backend/node_metadata_review.json`: only the MasterState source hash and
+  local recheck details for End, Merge and Wait Until; authored records unchanged.
+- `docs/audits/claims_baseline_2026_10_29/claims.json` and
+  `docs/audits/family_two_records_2026_10_31/claims.json`: regenerated using
+  `AOTN_CLAIMS_REPORT` / `AOTN_FLOW_CLAIMS_REPORT` and their documented receipt
+  tests. Only the MasterState source hash/provenance changes; observations match.
+  See [the receipt process](audits/family_two_records_2026_10_31/README.md).
+
+Focused verification: **1,234 passed, 187 skipped**. Full app-directory
+`python -m pytest -q -n auto`: 5,317 passed, 187 skipped (57.56 seconds). No paid/API calls. PR is for
+owner review, labeled Scaffolding; not merged.
+
 ## 2026-10-31 — Family 2 checker repairs
 
 Worktree `/home/makin/src/aotn-family-two-checker`, branch

@@ -25,6 +25,17 @@ error before opening. Draft admission, roles, prompts and trial sets are unchang
 Full suite: **5,353 passed / 187 skipped**.
 [Evidence and test counts](audits/network_notify_change_2026_11_01/README.md).
 
+## Blocked redraft and paused input status (2026-11-01)
+
+On `codex/blocked-redraft-paused-input`, from clean main `23a518e`, a blocked
+redraft now uses the same reason/blocked-requirements message as a blocked first
+draft. No further attempt, workflow save or build command follows. A non-blocked
+redraft retains its structural check. Resume now restores WAITING_FOR_INPUT when
+an input prompt remains unanswered, including prompts opened during the pause.
+Tests first reproduced both defects; answered prompts retain their previous
+pause/resume behavior. Only mock/fixture routes were used; no paid/API calls.
+See the latest Session Log entry for counts and the exact hash refreshes.
+
 ## Family 2 review fixes (2026-10-31)
 
 On `codex/family-two-review-fixes`, rebased onto main `784df48`, pause/resume now

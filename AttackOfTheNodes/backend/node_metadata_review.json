@@ -37,7 +37,7 @@
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
         "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
-        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+        "backend/master_state.py": "ae1489c5f51211dca93fbb6e1d8f4dc9572c475217bf1cfde8e62c9be7b12089",
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "9250da7138d5f7d71e197de9d670ff1c5d61a8c93b4a395883b0813cb863a4c0",
@@ -55,13 +55,14 @@
         "tests/test_node_claims.py::test_palette_real_engine_delivery",
         "tests/test_node_claims.py::test_claims_evidence_is_current",
         "tests/test_flow_behaviors.py::test_standalone_merge_app_warning_and_authoring_error",
-        "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure"
+        "tests/test_flow_behaviors.py::test_required_path_cannot_escape_and_validator_exports_structure",
+        "tests/test_execution_status.py::test_resume_preserves_unanswered_prompt_status"
       ],
       "content_sha256": "d1286b3cd480d410205b781edb27d75fae9637801d584f50fa0263762bcd5717",
       "author": "metadata-batch1-author-session",
-      "reviewed": "2026-10-31",
-      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503",
-      "verifier": "family-two-pause-and-joining-obligations-recheck"
+      "reviewed": "2026-11-01",
+      "source_revision": "23a518ec74e745c9291013b8480521230111bbd0",
+      "verifier": "paused-input-resume-local-recheck"
     },
     "branch_end_node": {
       "sources": {
@@ -75,8 +76,8 @@
         "backend/flow_behaviors.py": "b13af74d807bd672979f3b257bdfad75e75a7b9c4948f67032b827ceb0e7d76c",
         "backend/validator.py": "0720fd3388dc64cc549a006b0e5b2ccd828737ab5d2429e58a87b2cfc13264cd",
         "backend/validation_codes.py": "7c6b2543706e02dbba5290f35356c403dcebca371645bd7428b73ce19a79ddc0",
-        "frontend/screens/editor.py": "63b753d36a2db062c0a298d391889d5bf41d98a60ffa79cdeae4ec4f2f6edf3d",
-        "frontend/screens/node_config.py": "ca53b09a2c8975cd7345ecc7222e82337b4bc06af4000379cf155d3352f9d68d",
+        "frontend/screens/editor.py": "d16545b0aa53e56d3d06b9ed037ad42936b9c642c899788abed41ebd0562d686",
+        "frontend/screens/node_config.py": "01af698d4055e75f5cf2e208887ad08e8cc815d7f31f2a25c5dca4dbd6864b21",
         "frontend/editor_workflow_adapter.py": "21beb207df5e18d7adbd21c40487d81e0145fa7f727cc4205af2de44d8c64f71"
       },
       "tests": [
@@ -487,7 +488,7 @@
     "merge_node": {
       "sources": {
         "backend/nodes/merge_node.py": "aee96f76db53e6716cd9eaa7ca725e732958512e57ce980908c0cb0a20737fff",
-        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+        "backend/master_state.py": "ae1489c5f51211dca93fbb6e1d8f4dc9572c475217bf1cfde8e62c9be7b12089",
         "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
         "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
@@ -514,18 +515,19 @@
         "tests/test_flow_claims.py::test_flow_receipt_is_current",
         "tests/test_family_two_records.py::test_flow_templates_are_exported_validated_hashed_and_bounded",
         "tests/test_family_two_records.py::test_check_exports_stable_handle_flow_data_with_provenance",
-        "tests/test_family_two_checker_fixes.py::test_new_refusals_reach_one_structural_redraft"
+        "tests/test_family_two_checker_fixes.py::test_new_refusals_reach_one_structural_redraft",
+        "tests/test_execution_status.py::test_resume_preserves_unanswered_prompt_status"
       ],
       "content_sha256": "e81c833ac2facb056ccae9c08343d1d0a7487a7372420524cf19b74891ec609c",
       "author": "family-two-record-author",
-      "verifier": "family-two-pause-and-joining-obligations-recheck",
-      "reviewed": "2026-10-31",
-      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503"
+      "verifier": "paused-input-resume-local-recheck",
+      "reviewed": "2026-11-01",
+      "source_revision": "23a518ec74e745c9291013b8480521230111bbd0"
     },
     "wait_until_node": {
       "sources": {
         "backend/nodes/wait_until_node.py": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
-        "backend/master_state.py": "d5f330088d519ddd844b80f56dd541b8bc0d5395ad7aca98a9522b55e727ffec",
+        "backend/master_state.py": "ae1489c5f51211dca93fbb6e1d8f4dc9572c475217bf1cfde8e62c9be7b12089",
         "backend/supervisor.py": "acfe4d1d17988a5bcc42977cfeae235ed901ab5a0599de449ac169aaa8d968ff",
         "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
         "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
@@ -552,13 +554,14 @@
         "tests/test_flow_claims.py::test_flow_receipt_is_current",
         "tests/test_family_two_records.py::test_flow_templates_are_exported_validated_hashed_and_bounded",
         "tests/test_family_two_records.py::test_check_exports_stable_handle_flow_data_with_provenance",
-        "tests/test_family_two_checker_fixes.py::test_new_refusals_reach_one_structural_redraft"
+        "tests/test_family_two_checker_fixes.py::test_new_refusals_reach_one_structural_redraft",
+        "tests/test_execution_status.py::test_resume_preserves_unanswered_prompt_status"
       ],
       "content_sha256": "e5c7039125ef2eed59ca340257c5399e26817768421f67bf25003087b10f1b7a",
       "author": "family-two-record-author",
-      "verifier": "family-two-pause-and-joining-obligations-recheck",
-      "reviewed": "2026-10-31",
-      "source_revision": "784df48a5d489f3d5f35711fb32bfddb31b6b503"
+      "verifier": "paused-input-resume-local-recheck",
+      "reviewed": "2026-11-01",
+      "source_revision": "23a518ec74e745c9291013b8480521230111bbd0"
     },
     "http_request_node": {
       "sources": {
