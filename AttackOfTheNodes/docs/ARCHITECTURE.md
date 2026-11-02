@@ -152,7 +152,9 @@ its declared Vault answer before successful completion, including an empty answe
 Stopping an unanswered prompt prevents that publication and completion.
 
 Pause is cooperative between nodes. A breakpoint pauses before its node, and
-resume skips that same breakpoint once. The setting `node_timeout_seconds`
+resume skips that same breakpoint once. A prompt may open while paused; Resume
+restores WAITING_FOR_INPUT while it is unanswered. Answering during a pause
+keeps the run paused until Resume, which then restores RUNNING. The setting `node_timeout_seconds`
 supplies default node waits, not a timeout around `execute()` or a whole-run
 deadline. Wait Until and Merge can pass explicit wait values, including zero.
 
