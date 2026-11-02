@@ -1459,6 +1459,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 continue
             source_port = option.get("source_port") or "default"
             target_port = option.get("port") or "path_a"
+            already_wired = self._merge_input_connection_exists(
+                source_id, source_port, merge_node_id, target_port
+            )
+            if option_value in selected and already_wired:
+                continue
             if option_value not in selected:
                 if reconcile_unselected and self._merge_input_connection_exists(
                     source_id,
@@ -2378,9 +2383,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
             )
             return [
                 f"Merges To Branch: {branch_label}",
-                f"Merge Node: {self._node_label(target_id, target_node)}",
+                f"Merge collector: {self._node_label(target_id, target_node)}",
             ]
-        return ["Merges To Branch: -", "Merge Node: -"]
+        return ["Merges To Branch: -", "Merge collector: -"]
 
     def _selected_depth_text(self) -> str:
         if self.selected_row and self.selected_row.get("depth") is not None:
@@ -2783,7 +2788,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         active_color_key: str | None = None,
     ) -> Dict[str, Any]:
         connected_merge_id = self._merge_beacon_connected_merge_id(beacon_node_id)
-        label = "Choose merge"
+        label = "Choose Merge collector"
         if connected_merge_id:
             label = friendly_label(self.workflow_map, connected_merge_id)
         return {

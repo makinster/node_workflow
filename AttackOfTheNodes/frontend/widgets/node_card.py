@@ -421,7 +421,7 @@ class MergeBeaconSelectCard(Static):
     ) -> None:
         super().__init__()
         self.beacon_node_id = beacon_node_id
-        self.active_label = active_label or "Choose merge"
+        self.active_label = active_label or "Choose Merge collector"
         self.depth = depth
         self.active_port = active_port or "path_a"
         self.active_color_key = active_color_key or self.active_port
