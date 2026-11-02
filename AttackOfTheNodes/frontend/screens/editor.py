@@ -1483,6 +1483,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 source_port,
                 merge_node_id,
                 assignments[option_value],
+                keep_sources={
+                    other.get("branch_end_id", "") for other in options
+                    if f"{other['branch_id']}:{other['branch_port']}" == option_value
+                },
             )
         self._ensure_merge_input_slots(merge_node_id)
 
@@ -1547,6 +1551,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         source_port: str,
         merge_node_id: str,
         target_port: str,
+        keep_sources: set[str] = frozenset(),
     ) -> None:
         source = self.workflow_map.get_node_data(source_node_id) or {}
         existing_output = self._connection_for_port(source, source_port)
@@ -1572,7 +1577,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
 
         merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
         for conn in list(merge_node.get("connections", {}).get("inputs", [])):
-            if conn.get("target_port") != target_port:
+            if conn.get("target_port") != target_port or conn.get("source_node_id") in keep_sources:
                 continue
             self.workflow_map.disconnect(
                 conn.get("source_node_id", ""),

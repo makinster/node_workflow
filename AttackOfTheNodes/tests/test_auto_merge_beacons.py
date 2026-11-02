@@ -91,7 +91,15 @@ REVERSE_WIRING["connections"] = [c for c in TWO_PATHS["connections"] if c["from"
     {"from": "rejoin.default", "to": "join.path_b"},
 ]
 
-SHAPES = [TWO_PATHS, SPLIT_AGAIN, BRANCH_STRAIGHT_IN, EITHER_OR, REVERSE_WIRING]
+WIRED_ERROR = copy.deepcopy(REVERSE_WIRING)
+WIRED_ERROR["name"] = "Inner split with a wired error path"
+WIRED_ERROR["nodes"]["recovery"] = {"type": "text_transform_node", "alias": "Recovery"}
+WIRED_ERROR["connections"] += [
+    {"from": "inner.error", "to": "recovery.input"},
+    {"from": "recovery.default", "to": "rejoin.input"},
+]
+
+SHAPES = [TWO_PATHS, SPLIT_AGAIN, BRANCH_STRAIGHT_IN, EITHER_OR, REVERSE_WIRING, WIRED_ERROR]
 
 
 def _built(spec):
@@ -153,6 +161,38 @@ def test_the_check_and_the_editor_accept_the_new_shape(spec):
     wm.update_node_config(join, saved["config"])
     EditorScreen(factory, wm)._sync_merge_branch_end_connections(join, saved["config"], reconcile_unselected=True)
     assert sorted((c["source_node_id"], c["target_port"]) for c in _inputs(wm, join)) == before
+
+
+def _resave(factory, wm, join, closures):
+    config = {**wm.get_node_data(join)["config"], "branches_to_close": closures}
+    wm.update_node_config(join, config)
+    EditorScreen(factory, wm)._sync_merge_branch_end_connections(join, config, reconcile_unselected=True)
+
+
+def test_either_or_routes_rejoin_one_slot_when_their_branch_is_ticked_again():
+    factory, wm, ids = _built(EITHER_OR)
+    beacons = {a["beacon"] for a in insert_merge_beacons(wm, factory)}
+    join = ids["join"]
+    closures = list(wm.get_node_data(join)["config"]["branches_to_close"])
+
+    _resave(factory, wm, join, [])
+    assert not beacons & {c["source_node_id"] for c in _inputs(wm, join)}
+
+    _resave(factory, wm, join, closures)
+    slots = {c["source_node_id"]: c["target_port"] for c in _inputs(wm, join) if c["source_node_id"] in beacons}
+    assert set(slots) == beacons and len(set(slots.values())) == 1
+
+
+def test_a_new_either_or_marker_joins_its_wired_sibling():
+    factory, wm, ids = _built(EITHER_OR)
+    added = insert_merge_beacons(wm, factory)
+    join = ids["join"]
+    closures = list(wm.get_node_data(join)["config"]["branches_to_close"])
+    wm.disconnect(added[1]["beacon"], "default", join, "path_b")
+
+    _resave(factory, wm, join, closures)
+    slots = {c["source_node_id"]: c["target_port"] for c in _inputs(wm, join)}
+    assert slots[added[0]["beacon"]] == slots[added[1]["beacon"]] == "path_b"
 
 
 def test_a_second_pass_changes_nothing():
