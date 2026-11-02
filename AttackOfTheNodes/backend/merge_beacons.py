@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
 from .branch_paths import ALL_PATH_PORTS
+from .node_errors import ERROR_PORT
 
 MERGE_TYPE = "merge_node"
 BEACON_TYPE = "branch_end_node"
@@ -39,7 +40,7 @@ def _branch_contexts(workflow_map, factory) -> Dict[str, List[BranchKey]]:
         if factory.spawns_branches(str(node.get("type") or "")):
             # Port order, not wiring order, so this picks the editor's branch key.
             children = []
-            for port in factory.node_output_ports(node):
+            for port in [*factory.node_output_ports(node), ERROR_PORT]:
                 conn = next((c for c in outputs if c.get("source_port") == port), None)
                 if conn:
                     children.append((str(conn.get("target_node_id") or ""), (node_id, port)))

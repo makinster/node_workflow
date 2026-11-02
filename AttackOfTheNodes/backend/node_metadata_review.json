@@ -76,8 +76,8 @@
         "backend/flow_behaviors.py": "b13af74d807bd672979f3b257bdfad75e75a7b9c4948f67032b827ceb0e7d76c",
         "backend/validator.py": "0720fd3388dc64cc549a006b0e5b2ccd828737ab5d2429e58a87b2cfc13264cd",
         "backend/validation_codes.py": "7c6b2543706e02dbba5290f35356c403dcebca371645bd7428b73ce19a79ddc0",
-        "frontend/screens/editor.py": "63b753d36a2db062c0a298d391889d5bf41d98a60ffa79cdeae4ec4f2f6edf3d",
-        "frontend/screens/node_config.py": "ca53b09a2c8975cd7345ecc7222e82337b4bc06af4000379cf155d3352f9d68d",
+        "frontend/screens/editor.py": "d16545b0aa53e56d3d06b9ed037ad42936b9c642c899788abed41ebd0562d686",
+        "frontend/screens/node_config.py": "01af698d4055e75f5cf2e208887ad08e8cc815d7f31f2a25c5dca4dbd6864b21",
         "frontend/editor_workflow_adapter.py": "21beb207df5e18d7adbd21c40487d81e0145fa7f727cc4205af2de44d8c64f71"
       },
       "tests": [
