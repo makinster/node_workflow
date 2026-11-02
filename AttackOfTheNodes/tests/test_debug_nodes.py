@@ -2944,7 +2944,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         text = screen._branch_end_status_text()
         # Owner, 2026-10-14: names only; IDs have their own line.
         assert "Merges To Branch: Approve\n" in text
-        assert text.endswith("Merge Node: Merge collector") or "Merge Node: Merge collector\n" in text
+        assert text.endswith("Merge collector: Merge collector") or "Merge collector: Merge collector\n" in text
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -2959,7 +2959,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         screen.refresh_from_backend()
         details = screen.query_one("#node-details").display_text
         assert "Merges To Branch: Approve\n" in details
-        assert "Merge Node: Merge collector\n" in details
+        assert "Merge collector: Merge collector\n" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
 

@@ -562,9 +562,19 @@ def selected_merge_ports(workflow_map, node_id, options, selected):
     """Allocate the finite input capacity only to branches actually selected."""
     used = _reserved_merge_input_ports(workflow_map, node_id)
     assignments = {}
+    # A Join Merge already wired here keeps its slot; paths may share one.
+    wired = {}
+    for option in options:
+        beacon = workflow_map.get_node_data(str(option.get("branch_end_id") or "")) or {}
+        wired[id(option)] = _connected_merge_target_port(beacon, node_id)
+        if wired[id(option)]:
+            used.add(wired[id(option)])
     for option in options:
         key = f"{option['branch_id']}:{option['branch_port']}"
         if key not in selected:
+            continue
+        if wired[id(option)]:
+            assignments[key] = wired[id(option)]
             continue
         preferred = option.get("port")
         port = preferred if preferred in ALL_PATH_PORTS and preferred not in used else next((port for port in ALL_PATH_PORTS if port not in used), None)
@@ -3833,10 +3843,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 id="merge-unmatched-warning",
                 classes="form-description merge-unmatched-warning",
             )
-        rows = [
-            (option["description"], self._merge_option_value(option))
+        # Either-or routes on one branch close together, so they share a row.
+        rows = list({
+            self._merge_option_value(option): (option["description"], self._merge_option_value(option))
             for option in options
-        ] + [
+        }.values()) + [
             (f"Kept, no longer matches a branch: {value}", value)
             for value in self._merge_kept_close
         ]
@@ -3878,14 +3889,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _merge_carry_forward_options(
         self, options: list[Dict[str, str]], selected_values: set[str]
     ) -> list[tuple[str, str]]:
-        return [(f"Home branch | Input: {port}", f"home:{port}") for port in sorted(_reserved_merge_input_ports(self.workflow_map, self.node_id))] + [
-            (
+        return [(f"Home branch | Input: {port}", f"home:{port}") for port in sorted(_reserved_merge_input_ports(self.workflow_map, self.node_id))] + list({
+            self._merge_option_value(option): (
                 f"{option['branch_label']} | Output: {option['output_name']}",
                 self._merge_option_value(option),
             )
             for option in options
             if self._merge_option_value(option) in selected_values
-        ] + (
+        }.values()) + (
             [(f"Kept, no longer matches a branch: {kept}", kept)]
             if (kept := getattr(self, "_merge_kept_carry", ""))
             else []
@@ -4316,10 +4327,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 [
                     "Join Merge has no editable fields.",
                     f"Merges To Branch: {branch_label}",
-                    f"Merge Node: {self._node_label(target_id, target_node)}",
+                    f"Merge collector: {self._node_label(target_id, target_node)}",
                 ]
             )
-        return "Join Merge has no editable fields.\nStatus: open until connected to a Merge node."
+        return "Join Merge has no editable fields.\nStatus: open until connected to a Merge collector."
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return str(node.get("alias") or node.get("type") or node_id)
